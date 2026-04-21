@@ -2,7 +2,6 @@
 
 import React, { useEffect, useState, useCallback } from 'react';
 import { useTypingEngine } from '../hooks/useTypingEngine';
-import { TypingSettings } from './TypingSettings';
 import { getUniquePassage, Difficulty, Length, Theme, ChallengeType } from '../utils/passageGenerator';
 
 export const TypingTest = () => {
@@ -31,65 +30,62 @@ export const TypingTest = () => {
     reset();
   }, [initialText, reset]);
 
-  const handleDifficultyChange = (newDifficulty: Difficulty) => {
-    setDifficulty(newDifficulty);
-  };
-
-  const handleLengthChange = (newLength: Length) => {
-    setLength(newLength);
-  };
-
-  const handleThemeChange = (newTheme: Theme) => {
-    setTheme(newTheme);
-  };
-
-  const handleChallengeTypeChange = (newChallengeType: ChallengeType) => {
-    setChallengeType(newChallengeType);
-  };
-
   if (!isMounted) return null;
 
   return (
-    <div className="w-full flex flex-col gap-8">
-      <TypingSettings
-        difficulty={difficulty}
-        length={length}
-        theme={theme}
-        challengeType={challengeType}
-        onDifficultyChange={handleDifficultyChange}
-        onLengthChange={handleLengthChange}
-        onThemeChange={handleThemeChange}
-        onChallengeTypeChange={handleChallengeTypeChange}
-      />
+    <div className="w-full flex flex-col gap-16">
+      {/* Stats Header */}
+      <div className="flex justify-between items-center px-4">
+        <div className="flex gap-12">
+          <div className="group transition-all">
+            <span className="text-xs uppercase tracking-[0.2em] text-foreground/30 font-black mb-1 block group-hover:text-primary transition-colors">WPM</span>
+            <span className="text-5xl font-black text-foreground tabular-nums leading-none tracking-tighter">
+              {stats.wpm}
+            </span>
+          </div>
+          <div className="group transition-all">
+            <span className="text-xs uppercase tracking-[0.2em] text-foreground/30 font-black mb-1 block group-hover:text-primary transition-colors">ACC</span>
+            <span className="text-5xl font-black text-foreground tabular-nums leading-none tracking-tighter">
+              {stats.accuracy}<span className="text-xl text-foreground/20 ml-1">%</span>
+            </span>
+          </div>
+          <div className="group transition-all">
+            <span className="text-xs uppercase tracking-[0.2em] text-foreground/30 font-black mb-1 block group-hover:text-primary transition-colors">ERR</span>
+            <span className="text-5xl font-black text-foreground tabular-nums leading-none tracking-tighter">
+              {stats.errors}
+            </span>
+          </div>
+        </div>
 
-      <div className="flex justify-center gap-12 text-center">
-        <div>
-          <span className="block text-4xl font-black text-primary">{stats.wpm}</span>
-          <span className="text-xs uppercase tracking-widest text-foreground/40 font-bold">WPM</span>
-        </div>
-        <div>
-          <span className="block text-4xl font-black text-primary">{stats.accuracy}%</span>
-          <span className="text-xs uppercase tracking-widest text-foreground/40 font-bold">Accuracy</span>
-        </div>
-        <div>
-          <span className="block text-4xl font-black text-primary">{stats.errors}</span>
-          <span className="text-xs uppercase tracking-widest text-foreground/40 font-bold">Errors</span>
+        <div className="flex items-center gap-2">
+          <div className="h-2 w-24 bg-white/5 rounded-full overflow-hidden">
+            <div 
+              className="h-full bg-primary transition-all duration-300 shadow-[0_0_10px_rgba(11,175,231,0.5)]" 
+              style={{ width: `${(userInput.length / sampleText.length) * 100}%` }}
+            />
+          </div>
+          <span className="text-[10px] font-black text-foreground/20 uppercase tracking-widest">{Math.round((userInput.length / sampleText.length) * 100)}%</span>
         </div>
       </div>
 
+      {/* Typing Area */}
       <div 
-        className="relative text-2xl font-mono leading-relaxed text-foreground/30 cursor-text select-none min-h-[120px]"
+        className="relative text-3xl md:text-4xl font-serif leading-relaxed text-foreground/30 cursor-text select-none min-h-[160px] max-w-4xl mx-auto px-4"
         onClick={() => inputRef.current?.focus()}
       >
-        <div className="absolute top-0 left-0 w-full h-full pointer-events-none">
+        <div className="relative z-10 break-words whitespace-pre-wrap">
           {sampleText.split('').map((char, index) => {
-            const colorClass = index < userInput.length
-              ? (userInput[index] === char ? 'text-foreground' : 'text-red-500 bg-red-500/10')
-              : 'text-foreground/20';
-            const isCursor = index === userInput.length;
+            const isTyped = index < userInput.length;
+            const isCorrect = isTyped && userInput[index] === char;
+            const isCurrent = index === userInput.length;
+            
+            let colorClass = 'text-foreground/20';
+            if (isTyped) {
+              colorClass = isCorrect ? 'text-foreground' : 'text-red-500 bg-red-500/10 rounded-sm';
+            }
 
             return (
-              <span key={index} className={`${colorClass} ${isCursor ? 'typing-cursor' : ''}`}>
+              <span key={index} className={`${colorClass} transition-colors duration-100 ${isCurrent ? 'typing-cursor' : ''}`}>
                 {char}
               </span>
             );
@@ -99,31 +95,40 @@ export const TypingTest = () => {
         <input
           ref={inputRef}
           type="text"
-          className="opacity-0 absolute inset-0 w-full h-full cursor-default"
+          className="opacity-0 absolute inset-0 w-full h-full cursor-default caret-transparent"
           value={userInput}
           onChange={handleInputChange}
           autoFocus
+          autoComplete="off"
+          autoCapitalize="off"
+          autoCorrect="off"
+          spellCheck="false"
         />
       </div>
 
-      <div className="flex justify-center gap-4">
+      {/* Actions */}
+      <div className="flex justify-center items-center gap-6">
         <button 
           onClick={handleRegenerate}
-          className="px-6 py-2 bg-foreground/5 hover:bg-foreground/10 border border-border rounded-xl transition-all text-sm font-semibold"
+          className="group flex items-center gap-3 px-8 py-4 glass glass-hover rounded-2xl transition-all"
         >
-          New Passage
+          <svg className="w-4 h-4 text-primary group-hover:rotate-180 transition-transform duration-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" /></svg>
+          <span className="text-xs font-black uppercase tracking-widest">New Passage</span>
         </button>
+        
         <button 
           onClick={reset}
-          className="px-6 py-2 bg-foreground/5 hover:bg-foreground/10 border border-border rounded-xl transition-all text-sm font-semibold"
+          className="p-4 glass glass-hover rounded-2xl text-foreground/40 hover:text-primary transition-all"
+          title="Reset Test (Esc)"
         >
-          Reset Test
+          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M6 18L18 6M6 6l12 12" /></svg>
         </button>
+
         {isFinished && (
           <button 
-            className="px-6 py-2 bg-primary text-background hover:opacity-90 rounded-xl transition-all text-sm font-semibold animate-bounce"
+            className="px-10 py-4 bg-primary text-black font-black rounded-2xl shadow-[0_15px_40px_rgba(11,175,231,0.3)] hover:scale-105 active:scale-95 transition-all animate-fade-in"
           >
-            Save Result
+            SAVE RESULT
           </button>
         )}
       </div>
