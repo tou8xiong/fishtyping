@@ -42,24 +42,24 @@ export default function RootLayout({
                 </div>
                 <span className="text-2xl font-black tracking-tight bg-gradient-to-r from-white to-white/60 bg-clip-text text-transparent">FishTyping</span>
               </Link>
-
+              
               <nav className="hidden md:flex items-center gap-10 text-sm font-semibold tracking-wide">
                 <Link href="/typing" className="text-foreground/60 hover:text-primary transition-all duration-200">PRACTICE</Link>
                 <Link href="/leaderboard" className="text-foreground/60 hover:text-primary transition-all duration-200">LEADERBOARD</Link>
                 <Link href="/settings" className="text-foreground/60 hover:text-primary transition-all duration-200">SETTINGS</Link>
               </nav>
 
-              <div className="flex items-center gap-4">
-                <Link href="/login" className="px-6 py-2.5 rounded-full text-sm font-bold text-foreground/80 hover:text-foreground transition-colors">
+              <div className="flex items-center gap-6">
+                <Link href="/login" className="px-8 py-3.5 rounded-xl text-sm font-bold text-foreground/80 hover:text-foreground hover:bg-white/5 transition-all">
                   Log In
                 </Link>
-                <Link href="/register" className="bg-primary text-black px-6 py-2.5 rounded-full text-sm font-black hover:scale-105 active:scale-95 transition-all shadow-[0_0_20px_rgba(11,175,231,0.2)]">
+                <Link href="/register" className="bg-primary text-black px-10 py-4 rounded-xl text-sm font-black hover:scale-105 active:scale-95 transition-all shadow-[0_15px_30px_rgba(11,175,231,0.2)]">
                   GET STARTED
                 </Link>
               </div>
             </div>
           </header>
-
+          
           <main className="flex-1 flex flex-col">
             {children}
           </main>

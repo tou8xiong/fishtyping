@@ -18,18 +18,18 @@ export default function LeaderboardPage() {
     <div className="flex-1 flex flex-col items-center py-20 px-6 relative overflow-hidden bg-[#020617]">
       {/* Background Glow */}
       <div className="absolute top-[-10%] left-[20%] w-[60%] h-[40%] bg-primary/5 rounded-full blur-[140px] pointer-events-none" />
-      
+
       <div className="w-full max-w-5xl z-10 space-y-12 animate-fade-in">
         <div className="flex flex-col md:flex-row justify-between items-end gap-6">
           <div className="space-y-4">
             <h1 className="text-6xl font-black tracking-tighter italic bg-gradient-to-r from-primary to-white/40 bg-clip-text text-transparent">Hall of Fame</h1>
             <p className="text-lg text-foreground/40 font-medium">The fastest minds in the digital ocean.</p>
           </div>
-          
+
           <div className="flex gap-2 p-1.5 glass rounded-2xl">
             {['Global', 'Friends', 'Local'].map((tab) => (
-              <button 
-                key={tab} 
+              <button
+                key={tab}
                 className={`px-6 py-2.5 rounded-xl text-xs font-black uppercase tracking-widest transition-all ${tab === 'Global' ? 'bg-primary text-black shadow-lg' : 'hover:bg-white/5 text-foreground/40'}`}
               >
                 {tab}

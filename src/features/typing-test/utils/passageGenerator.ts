@@ -2,6 +2,20 @@ export type Difficulty = 'beginner' | 'intermediate' | 'advanced' | 'expert';
 export type Length = 'short' | 'medium' | 'long';
 export type Theme = 'technology' | 'nature' | 'science' | 'history' | 'general';
 export type ChallengeType = 'standard' | 'punctuation' | 'numbers' | 'speed';
+export type Language = 'english' | 'lao';
+
+const LAO_PASSAGES = [
+  'ສະບາຍດີ ຍິນດີຕ້ອນຮັບເຂົ້າສູ່ລະບົບການຝຶກພິມພາສາລາວ ທີ່ທັນສະໄຫມທີ່ສຸດ.',
+  'ປະເທດລາວ ເປັນປະເທດທີ່ມີຄວາມສວຍງາມທາງທຳມະຊາດ ແລະ ວັດທະນະທຳທີ່ເປັນເອກະລັກ.',
+  'ການຮຽນຮູ້ສິ່ງໃຫມ່ໆ ຕ້ອງໃຊ້ຄວາມພະຍາຍາມ ແລະ ຄວາມອົດທົນຢ່າງຕໍ່ເນື່ອງ.',
+  'ອາຫານລາວ ມີລົດຊາດທີ່ແຊບຊ້ອຍ ແລະ ເປັນທີ່ນິຍົມຂອງຄົນທົ່ວໂລກ.',
+  'ພວກເຮົາຮັກສາຄວາມສະອາດ ແລະ ສິ່ງແວດລ້ອມ ເພື່ອອະນາຄົດທີ່ດີຂອງລູກຫຼານ.',
+  'ການພັດທະນາຕົນເອງ ແມ່ນການລົງທຶນທີ່ມີຄຸນຄ່າທີ່ສຸດໃນຊີວິດຂອງພວກເຮົາ.',
+  'ຄວາມສາມັກຄີ ແມ່ນພະລັງທີ່ຍິ່ງໃຫຍ່ ໃນການສ້າງສາພັດທະນາປະເທດຊາດ.',
+  'ເຕັກໂນໂລຊີ ຊ່ວຍໃຫ້ການຕິດຕໍ່ສື່ສານສະດວກ ແລະ ວ່ອງໄວຂຶ້ນຫຼາຍ.',
+  'ວັດທະນະທຳລາວ ມີຄວາມອ່ອນຊ້ອຍ ແລະ ສວຍງາມ ໂດຍສະເພາະແມ່ນການນຸ່ງຖື.',
+  'ການທ່ອງທ່ຽວໃນລາວ ຊ່ວຍສ້າງລາຍຮັບໃຫ້ແກ່ປະຊາຊົນທ້ອງຖິ່ນຢ່າງຫຼວງຫຼາຍ.',
+];
 
 const THEMES: Record<Theme, string[]> = {
   technology: [
@@ -177,8 +191,15 @@ export function generatePassage(
   difficulty: Difficulty = 'intermediate',
   length: Length = 'medium',
   theme: Theme = 'general',
-  challengeType: ChallengeType = 'standard'
+  challengeType: ChallengeType = 'standard',
+  language: Language = 'english'
 ): string {
+  if (language === 'lao') {
+    const targetCount = length === 'short' ? 2 : length === 'medium' ? 4 : 7;
+    const shuffled = shuffle([...LAO_PASSAGES]);
+    return shuffled.slice(0, targetCount).join(' ');
+  }
+
   if (challengeType === 'punctuation') {
     const targetSentences = length === 'short' ? 2 : length === 'medium' ? 3 : 5;
     const shuffled = shuffle([...PUNCTUATION_PASSAGES]);
@@ -210,13 +231,14 @@ export function getUniquePassage(
   difficulty: Difficulty = 'intermediate',
   length: Length = 'medium',
   theme: Theme = 'general',
-  challengeType: ChallengeType = 'standard'
+  challengeType: ChallengeType = 'standard',
+  language: Language = 'english'
 ): string {
   let attempts = 0;
   let passage = '';
   
   do {
-    passage = generatePassage(difficulty, length, theme, challengeType);
+    passage = generatePassage(difficulty, length, theme, challengeType, language);
     attempts++;
   } while (usedPassages.has(passage) && attempts < 10);
   

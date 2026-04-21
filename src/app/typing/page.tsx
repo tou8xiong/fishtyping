@@ -19,7 +19,7 @@ export default function TypingPage() {
           </div>
         </div>
 
-        <div className="glass p-12 md:p-20 rounded-[40px] shadow-2xl relative overflow-hidden group">
+        <div className="glass p-12 md:p-20 rounded-3xl shadow-2xl relative overflow-hidden group">
           <div className="absolute top-0 right-0 p-8 opacity-10 group-hover:opacity-20 transition-opacity">
             <div className="w-24 h-24 border-4 border-white rounded-full flex items-center justify-center font-black text-4xl italic">F</div>
           </div>
@@ -28,7 +28,7 @@ export default function TypingPage() {
 
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
           {['Esc - Reset', 'Tab - Settings', 'Ctrl+R - New Test', 'Alt+S - Share'].map((hint, i) => (
-            <div key={i} className="px-6 py-4 glass glass-hover rounded-2xl text-[10px] font-black uppercase tracking-widest text-foreground/30 flex items-center justify-center">
+            <div key={i} className="px-6 py-4 glass glass-hover rounded-xl text-[10px] font-black uppercase tracking-widest text-foreground/30 flex items-center justify-center">
               {hint}
             </div>
           ))}

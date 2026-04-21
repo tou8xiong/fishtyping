@@ -62,9 +62,9 @@ const OptionButton: React.FC<{
 }> = ({ value, currentValue, onClick, label }) => (
   <button
     onClick={onClick}
-    className={`px-5 py-3 text-xs font-bold rounded-xl transition-all duration-300 ${
+    className={`px-8 py-3.5 text-sm font-bold rounded-xl transition-all duration-300 ${
       value === currentValue
-        ? 'bg-primary text-black shadow-[0_0_20px_rgba(11,175,231,0.3)]'
+        ? 'bg-primary text-black shadow-[0_10px_30px_rgba(11,175,231,0.2)]'
         : 'glass glass-hover text-foreground/40 hover:text-foreground/80'
     }`}
   >
@@ -83,7 +83,7 @@ export const TypingSettings: React.FC<TypingSettingsProps> = ({
   onChallengeTypeChange = () => {},
 }) => {
   return (
-    <div className="space-y-12">
+    <div className="space-y-10">
       <SettingSection title="Experience Level">
         {difficultyOptions.map((opt) => (
           <OptionButton
