@@ -110,7 +110,7 @@ export const TypingTest = () => {
       <div className="flex justify-center items-center gap-6">
         <button 
           onClick={handleRegenerate}
-          className="group flex items-center gap-3 px-8 py-4 glass glass-hover rounded-2xl transition-all"
+          className="group flex items-center gap-3 px-8 py-4 glass glass-hover rounded-md transition-all"
         >
           <svg className="w-4 h-4 text-primary group-hover:rotate-180 transition-transform duration-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" /></svg>
           <span className="text-xs font-black uppercase tracking-widest">New Passage</span>
@@ -118,7 +118,7 @@ export const TypingTest = () => {
         
         <button 
           onClick={reset}
-          className="p-4 glass glass-hover rounded-2xl text-foreground/40 hover:text-primary transition-all"
+          className="p-4 glass glass-hover rounded-md text-foreground/40 hover:text-primary transition-all"
           title="Reset Test (Esc)"
         >
           <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M6 18L18 6M6 6l12 12" /></svg>
@@ -126,7 +126,7 @@ export const TypingTest = () => {
 
         {isFinished && (
           <button 
-            className="px-10 py-4 bg-primary text-black font-black rounded-2xl shadow-[0_15px_40px_rgba(11,175,231,0.3)] hover:scale-105 active:scale-95 transition-all animate-fade-in"
+            className="px-10 py-4 bg-primary text-black font-black rounded-md shadow-[0_15px_40px_rgba(11,175,231,0.3)] hover:scale-105 active:scale-95 transition-all animate-fade-in"
           >
             SAVE RESULT
           </button>

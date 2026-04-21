@@ -14,24 +14,24 @@ export default function RegisterPage() {
           <p className="text-foreground/40 font-medium">Join the elite circle of the world's fastest typists.</p>
         </div>
 
-        <div className="glass p-10 rounded-[32px] shadow-2xl border-white/5 space-y-5">
+        <div className="glass p-8 rounded-md shadow-2xl border-white/5 space-y-5">
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
               <label className="text-xs font-black uppercase tracking-widest text-foreground/40 px-1">First Name</label>
-              <input type="text" placeholder="John" className="w-full bg-white/5 border border-white/10 rounded-2xl px-5 py-4 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all placeholder:text-foreground/20" />
+              <input type="text" placeholder="John" className="w-full bg-white/5 border border-white/10 rounded-md px-5 py-4 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all placeholder:text-foreground/20" />
             </div>
             <div className="space-y-2">
               <label className="text-xs font-black uppercase tracking-widest text-foreground/40 px-1">Last Name</label>
-              <input type="text" placeholder="Doe" className="w-full bg-white/5 border border-white/10 rounded-2xl px-5 py-4 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all placeholder:text-foreground/20" />
+              <input type="text" placeholder="Doe" className="w-full bg-white/5 border border-white/10 rounded-md px-5 py-4 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all placeholder:text-foreground/20" />
             </div>
           </div>
           <div className="space-y-2">
             <label className="text-xs font-black uppercase tracking-widest text-foreground/40 px-1">Email Address</label>
-            <input type="email" placeholder="name@example.com" className="w-full bg-white/5 border border-white/10 rounded-2xl px-5 py-4 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all placeholder:text-foreground/20" />
+            <input type="email" placeholder="name@example.com" className="w-full bg-white/5 border border-white/10 rounded-md px-5 py-4 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all placeholder:text-foreground/20" />
           </div>
           <div className="space-y-2">
             <label className="text-xs font-black uppercase tracking-widest text-foreground/40 px-1">Password</label>
-            <input type="password" placeholder="••••••••" className="w-full bg-white/5 border border-white/10 rounded-2xl px-5 py-4 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all placeholder:text-foreground/20" />
+            <input type="password" placeholder="••••••••" className="w-full bg-white/5 border border-white/10 rounded-md px-5 py-4 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all placeholder:text-foreground/20" />
           </div>
           
           <div className="flex items-start gap-3 py-2 px-1">
@@ -41,7 +41,7 @@ export default function RegisterPage() {
             </p>
           </div>
 
-          <button className="w-full bg-primary text-black font-black py-4 rounded-2xl shadow-[0_10px_30px_rgba(11,175,231,0.2)] hover:scale-[1.02] active:scale-[0.98] transition-all">
+          <button className="w-full bg-primary text-black font-black py-4 rounded-md shadow-[0_10px_30px_rgba(11,175,231,0.2)] hover:scale-[1.02] active:scale-[0.98] transition-all">
             CREATE ACCOUNT
           </button>
         </div>

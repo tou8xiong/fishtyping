@@ -62,7 +62,7 @@ const OptionButton: React.FC<{
 }> = ({ value, currentValue, onClick, label }) => (
   <button
     onClick={onClick}
-    className={`px-5 py-3 text-xs font-bold rounded-xl transition-all duration-300 ${
+    className={`px-5 py-3 text-xs font-bold rounded-md transition-all duration-300 ${
       value === currentValue
         ? 'bg-primary text-black shadow-[0_0_20px_rgba(11,175,231,0.3)]'
         : 'glass glass-hover text-foreground/40 hover:text-foreground/80'

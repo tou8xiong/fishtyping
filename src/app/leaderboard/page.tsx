@@ -26,11 +26,11 @@ export default function LeaderboardPage() {
             <p className="text-lg text-foreground/40 font-medium">The fastest minds in the digital ocean.</p>
           </div>
           
-          <div className="flex gap-2 p-1.5 glass rounded-2xl">
+          <div className="flex gap-2 p-1.5 glass rounded-md">
             {['Global', 'Friends', 'Local'].map((tab) => (
               <button 
                 key={tab} 
-                className={`px-6 py-2.5 rounded-xl text-xs font-black uppercase tracking-widest transition-all ${tab === 'Global' ? 'bg-primary text-black shadow-lg' : 'hover:bg-white/5 text-foreground/40'}`}
+                className={`px-6 py-2.5 rounded-md text-xs font-black uppercase tracking-widest transition-all ${tab === 'Global' ? 'bg-primary text-black shadow-lg' : 'hover:bg-white/5 text-foreground/40'}`}
               >
                 {tab}
               </button>
@@ -42,10 +42,10 @@ export default function LeaderboardPage() {
           {/* Top 3 Podium Cards */}
           <div className="lg:col-span-4 grid grid-cols-1 md:grid-cols-3 gap-6">
             {mockLeaderboard.slice(0, 3).map((user, i) => (
-              <div key={user.rank} className={`p-8 glass rounded-[32px] relative overflow-hidden group transition-all hover:scale-[1.02] border-t-2 ${i === 0 ? 'border-primary shadow-[0_20px_50px_rgba(11,175,231,0.1)]' : 'border-white/5'}`}>
+              <div key={user.rank} className={`p-6 glass rounded-md relative overflow-hidden group transition-all hover:scale-[1.02] border-t-2 ${i === 0 ? 'border-primary shadow-[0_20px_50px_rgba(11,175,231,0.1)]' : 'border-white/5'}`}>
                 <div className="absolute top-0 right-0 p-6 opacity-5 group-hover:opacity-10 transition-opacity font-black text-8xl italic">#{user.rank}</div>
-                <div className="flex items-center gap-4 mb-6">
-                  <div className={`w-14 h-14 rounded-2xl flex items-center justify-center font-black text-xl ${i === 0 ? 'bg-primary text-black' : 'bg-white/5 text-primary'}`}>
+                <div className="flex items-center gap-4 mb-4">
+                  <div className={`w-14 h-14 rounded-md flex items-center justify-center font-black text-xl ${i === 0 ? 'bg-primary text-black' : 'bg-white/5 text-primary'}`}>
                     {user.avatar}
                   </div>
                   <div>
@@ -68,7 +68,7 @@ export default function LeaderboardPage() {
           </div>
 
           {/* List Table */}
-          <div className="lg:col-span-4 glass rounded-[40px] overflow-hidden shadow-2xl border-white/5">
+          <div className="lg:col-span-4 glass rounded-md overflow-hidden shadow-2xl border-white/5">
             <div className="overflow-x-auto">
               <table className="w-full text-left">
                 <thead>
@@ -88,7 +88,7 @@ export default function LeaderboardPage() {
                       </td>
                       <td className="px-8 py-6">
                         <div className="flex items-center gap-4">
-                          <div className="w-10 h-10 bg-white/5 rounded-xl flex items-center justify-center font-black text-xs text-foreground/40 group-hover:bg-primary group-hover:text-black transition-all">
+                          <div className="w-10 h-10 bg-white/5 rounded-md flex items-center justify-center font-black text-xs text-foreground/40 group-hover:bg-primary group-hover:text-black transition-all">
                             {user.avatar}
                           </div>
                           <div>
@@ -121,7 +121,7 @@ export default function LeaderboardPage() {
 
         <div className="flex flex-col items-center gap-6 pt-8">
           <p className="text-sm text-foreground/40 font-medium">Want to see yourself here?</p>
-          <Link href="/typing" className="px-12 py-5 bg-white text-black rounded-2xl font-black text-lg transition-all hover:scale-105 active:scale-95 shadow-[0_20px_50px_rgba(255,255,255,0.1)]">
+          <Link href="/typing" className="px-12 py-5 bg-white text-black rounded-md font-black text-lg transition-all hover:scale-105 active:scale-95 shadow-[0_20px_50px_rgba(255,255,255,0.1)]">
             GO TO PRACTICE
           </Link>
         </div>
