@@ -27,6 +27,7 @@ export const useTimer = (config: TimerConfig, onTimeUp?: () => void) => {
   const onTimeUpRef = useRef(onTimeUp);
   const durationRef = useRef(config.durationSeconds);
 
+
   useEffect(() => {
     onTimeUpRef.current = onTimeUp;
   }, [onTimeUp]);
@@ -42,65 +43,71 @@ export const useTimer = (config: TimerConfig, onTimeUp?: () => void) => {
   const resetTime = useCallback((duration?: number) => {
     const newDuration = duration ?? durationRef.current;
     setTimeLeft(newDuration);
-    setIsRunning(false);
-    setIsPaused(false);
-  }, []);
+    const resetTime = useCallback((duration: number) => {
+      setTimeLeft(duration);
+      setIsRunning(false);
+      setIsPaused(false);
+    }, []);
 
-  useEffect(() => {
-    if (isRunning && !isPaused && timeLeft > 0 && config.mode !== 'zen') {
-      intervalRef.current = setInterval(() => {
-        setTimeLeft(prev => {
-          if (prev <= 1) {
-            setIsRunning(false);
-            if (onTimeUpRef.current) {
-              onTimeUpRef.current();
+    useEffect(() => {
+      resetTime(config.durationSeconds);
+    }, [config.durationSeconds, resetTime]);
+
+    useEffect(() => {
+      if (isRunning && !isPaused && timeLeft > 0 && config.mode !== 'zen') {
+        intervalRef.current = setInterval(() => {
+          setTimeLeft(prev => {
+            if (prev <= 1) {
+              setIsRunning(false);
+              if (onTimeUpRef.current) {
+                onTimeUpRef.current();
+              }
+              return 0;
             }
-            return 0;
-          }
-          return prev - 1;
-        });
-      }, 1000);
-    }
-
-    return () => {
-      if (intervalRef.current) {
-        clearInterval(intervalRef.current);
+            return prev - 1;
+          });
+        }, 1000);
       }
+
+      return () => {
+        if (intervalRef.current) {
+          clearInterval(intervalRef.current);
+        }
+      };
+    }, [isRunning, isPaused, timeLeft, config.mode]);
+
+    const start = useCallback(() => {
+      setIsRunning(true);
+      setIsPaused(false);
+    }, []);
+
+    const pause = useCallback(() => {
+      setIsPaused(true);
+    }, []);
+
+    const resume = useCallback(() => {
+      setIsPaused(false);
+    }, []);
+
+    const stop = useCallback(() => {
+      setIsRunning(false);
+    }, []);
+
+    const formatTime = useCallback((seconds: number): string => {
+      const mins = Math.floor(seconds / 60);
+      const secs = seconds % 60;
+      return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+    }, []);
+
+    return {
+      timeLeft,
+      isRunning,
+      isPaused,
+      formattedTime: formatTime(timeLeft),
+      start,
+      pause,
+      resume,
+      reset: () => resetTime(config.durationSeconds),
+      stop,
     };
-  }, [isRunning, isPaused, timeLeft, config.mode]);
-
-  const start = useCallback(() => {
-    setIsRunning(true);
-    setIsPaused(false);
-  }, []);
-
-  const pause = useCallback(() => {
-    setIsPaused(true);
-  }, []);
-
-  const resume = useCallback(() => {
-    setIsPaused(false);
-  }, []);
-
-  const stop = useCallback(() => {
-    setIsRunning(false);
-  }, []);
-
-  const formatTime = useCallback((seconds: number): string => {
-    const mins = Math.floor(seconds / 60);
-    const secs = seconds % 60;
-    return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
-  }, []);
-
-  return {
-    timeLeft,
-    isRunning,
-    isPaused,
-    formattedTime: formatTime(timeLeft),
-    start,
-    pause,
-    resume,
-    reset: () => resetTime(config.durationSeconds),
-    stop,
   };
-};
