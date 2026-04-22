@@ -20,11 +20,12 @@ export const useTypingEngine = (text: string) => {
     endTime: null,
   });
   const [isFinished, setIsFinished] = useState(false);
+  const [timeElapsed, setTimeElapsed] = useState(0);
   const inputRef = useRef<HTMLInputElement>(null);
 
-  const calculateStats = useCallback((currentInput: string, timeElapsed: number) => {
+  const calculateStats = useCallback((currentInput: string, elapsed: number) => {
     const words = currentInput.length / 5; // Standard: 5 chars = 1 word
-    const minutes = timeElapsed / 60000;
+    const minutes = elapsed / 60000;
     const wpm = minutes > 0 ? Math.round(words / minutes) : 0;
 
     let errors = 0;
@@ -60,15 +61,16 @@ export const useTypingEngine = (text: string) => {
   useEffect(() => {
     if (stats.startTime && !isFinished) {
       const interval = setInterval(() => {
-        const timeElapsed = Date.now() - (stats.startTime || 0);
-        const { wpm, accuracy, errors } = calculateStats(userInput, timeElapsed);
+        const elapsed = Date.now() - (stats.startTime || 0);
+        setTimeElapsed(elapsed);
+        const { wpm, accuracy, errors } = calculateStats(userInput, elapsed);
         setStats(prev => ({ ...prev, wpm, accuracy, errors }));
       }, 500);
       return () => clearInterval(interval);
     }
   }, [stats.startTime, isFinished, userInput, calculateStats]);
 
-  const reset = () => {
+  const reset = useCallback(() => {
     setUserInput('');
     setStats({
       wpm: 0,
@@ -77,14 +79,16 @@ export const useTypingEngine = (text: string) => {
       startTime: null,
       endTime: null,
     });
+    setTimeElapsed(0);
     setIsFinished(false);
     inputRef.current?.focus();
-  };
+  }, []);
 
   return {
     userInput,
     stats,
     isFinished,
+    timeElapsed,
     handleInputChange,
     reset,
     inputRef,

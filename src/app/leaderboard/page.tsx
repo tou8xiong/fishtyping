@@ -11,7 +11,7 @@ const mockLeaderboard = [
   { rank: 8, name: "QuantumStrike", wpm: 155, accuracy: 96.9, avatar: "QS", level: 52 },
   { rank: 9, name: "ZephyrLink", wpm: 152, accuracy: 98.0, avatar: "ZL", level: 41 },
   { rank: 10, name: "NovaPulse", wpm: 148, accuracy: 97.5, avatar: "NP", level: 33 },
-];
+];    
 
 export default function LeaderboardPage() {
   return (

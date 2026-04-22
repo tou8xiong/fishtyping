@@ -18,20 +18,20 @@
 }
 
 :root {
-  --background: #000000;
+  --background: #1e1e1e;
   --foreground: #f8fafc;
-  --card: rgba(15, 23, 42, 0.5);
-  --border: rgba(30, 41, 59, 0.5);
+  --card: rgba(30, 30, 30, 0.6);
+  --border: rgba(60, 60, 60, 0.5);
   --primary: #0bafe7;
   --secondary: #ffc338;
 }
 
 @media (prefers-color-scheme: light) {
   :root {
-    --background: #f8fafc;
-    --foreground: #000000;
-    --card: rgba(255, 255, 255, 0.8);
-    --border: rgba(226, 232, 240, 0.8);
+    --background: #1e1e1e;
+    --foreground: #f8fafc;
+    --card: rgba(30, 30, 30, 0.6);
+    --border: rgba(60, 60, 60, 0.5);
   }
 }
 
@@ -80,7 +80,7 @@ body {
 }
 
 ::-webkit-scrollbar-thumb {
-  background: #111827;
+  background: #1a1a1d;
   border-radius: 10px;
 }
 
