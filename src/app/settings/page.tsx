@@ -2,7 +2,7 @@ import { TypingSettings } from "@/features/typing-test/components/TypingSettings
 
 export default function SettingsPage() {
   return (
-    <div className="flex-1 flex flex-col items-center py-20 px-6 relative overflow-hidden">
+    <div className="flex-1 flex flex-col items-center py-20 px-8 relative overflow-hidden">
       <div className="absolute top-0 right-0 w-[50%] h-[50%] bg-primary/5 rounded-full blur-[120px] pointer-events-none" />
 
       <div className="w-full max-w-3xl z-10 space-y-12 animate-fade-in">
@@ -16,13 +16,13 @@ export default function SettingsPage() {
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <div className="p-8 glass glass-hover rounded-xl space-y-3">
+          <div className="p-8 glass glass-hover rounded-lg space-y-3 border border-white/10 hover:border-white/20 transition-all">
             <div className="text-primary font-black text-xs tracking-widest uppercase">Visuals</div>
             <h3 className="text-xl font-bold">Custom Themes</h3>
             <p className="text-sm text-foreground/40 leading-relaxed">Choose from our curated collection of themes or create your own CSS-based styles.</p>
             <button className="mt-4 text-sm font-bold text-primary underline underline-offset-4 decoration-2">Coming Soon</button>
           </div>
-          <div className="p-8 glass glass-hover rounded-xl space-y-3">
+          <div className="p-8 glass glass-hover rounded-lg space-y-3 border border-white/10 hover:border-white/20 transition-all">
             <div className="text-primary font-black text-xs tracking-widest uppercase">Controls</div>
             <h3 className="text-xl font-bold">Key Bindings</h3>
             <p className="text-sm text-foreground/40 leading-relaxed">Remap your keyboard shortcuts for resetting, navigating, and managing tests.</p>

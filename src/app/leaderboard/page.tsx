@@ -15,7 +15,7 @@ const mockLeaderboard = [
 
 export default function LeaderboardPage() {
   return (
-    <div className="flex-1 flex flex-col items-center py-20 px-6 relative overflow-hidden bg-[#020617]">
+    <div className="flex-1 flex flex-col items-center py-20 px-8 relative overflow-hidden bg-[#020617]">
       {/* Background Glow */}
       <div className="absolute top-[-10%] left-[20%] w-[60%] h-[40%] bg-primary/5 rounded-full blur-[140px] pointer-events-none" />
 
@@ -42,7 +42,7 @@ export default function LeaderboardPage() {
           {/* Top 3 Podium Cards */}
           <div className="lg:col-span-4 grid grid-cols-1 md:grid-cols-3 gap-6">
             {mockLeaderboard.slice(0, 3).map((user, i) => (
-              <div key={user.rank} className={`p-8 glass rounded-[32px] relative overflow-hidden group transition-all hover:scale-[1.02] border-t-2 ${i === 0 ? 'border-primary shadow-[0_20px_50px_rgba(11,175,231,0.1)]' : 'border-white/5'}`}>
+              <div key={user.rank} className={`p-8 glass rounded-2xl relative overflow-hidden group transition-all hover:scale-[1.02] border ${i === 0 ? 'border-primary shadow-[0_20px_50px_rgba(11,175,231,0.2)] hover:shadow-[0_25px_60px_rgba(11,175,231,0.3)]' : 'border-white/10 hover:border-white/20 hover:shadow-lg'}`}>
                 <div className="absolute top-0 right-0 p-6 opacity-5 group-hover:opacity-10 transition-opacity font-black text-8xl italic">#{user.rank}</div>
                 <div className="flex items-center gap-4 mb-6">
                   <div className={`w-14 h-14 rounded-2xl flex items-center justify-center font-black text-xl ${i === 0 ? 'bg-primary text-black' : 'bg-white/5 text-primary'}`}>
@@ -68,11 +68,11 @@ export default function LeaderboardPage() {
           </div>
 
           {/* List Table */}
-          <div className="lg:col-span-4 glass rounded-[40px] overflow-hidden shadow-2xl border-white/5">
+          <div className="lg:col-span-4 glass rounded-2xl overflow-hidden shadow-2xl border border-white/10 hover:border-white/20 transition-all">
             <div className="overflow-x-auto">
               <table className="w-full text-left">
                 <thead>
-                  <tr className="border-b border-white/5">
+                  <tr className="border-b border-white/10">
                     <th className="px-8 py-6 text-[10px] font-black uppercase tracking-widest text-foreground/20">Rank</th>
                     <th className="px-8 py-6 text-[10px] font-black uppercase tracking-widest text-foreground/20">User</th>
                     <th className="px-8 py-6 text-[10px] font-black uppercase tracking-widest text-foreground/20">Speed</th>

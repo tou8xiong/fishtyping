@@ -35,8 +35,8 @@ export const useTypingEngine = (text: string) => {
       }
     }
 
-    const accuracy = currentInput.length > 0 
-      ? Math.round(((currentInput.length - errors) / currentInput.length) * 100) 
+    const accuracy = currentInput.length > 0
+      ? Math.round(((currentInput.length - errors) / currentInput.length) * 100)
       : 100;
 
     return { wpm, accuracy, errors };
