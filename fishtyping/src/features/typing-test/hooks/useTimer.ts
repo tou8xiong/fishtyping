@@ -22,22 +22,29 @@ export const useTimer = (config: TimerConfig, onTimeUp?: () => void) => {
   const [timeLeft, setTimeLeft] = useState(() => config.durationSeconds);
   const [isRunning, setIsRunning] = useState(false);
   const [isPaused, setIsPaused] = useState(false);
+  const [isInitialized, setIsInitialized] = useState(false);
   const intervalRef = useRef<NodeJS.Timeout | null>(null);
   const onTimeUpRef = useRef(onTimeUp);
+  const durationRef = useRef(config.durationSeconds);
 
   useEffect(() => {
     onTimeUpRef.current = onTimeUp;
   }, [onTimeUp]);
 
-  const resetTime = useCallback((duration: number) => {
-    setTimeLeft(duration);
+  useEffect(() => {
+    if (!isInitialized) {
+      setIsInitialized(true);
+      durationRef.current = config.durationSeconds;
+      setTimeLeft(config.durationSeconds);
+    }
+  }, [isInitialized, config.durationSeconds]);
+
+  const resetTime = useCallback((duration?: number) => {
+    const newDuration = duration ?? durationRef.current;
+    setTimeLeft(newDuration);
     setIsRunning(false);
     setIsPaused(false);
   }, []);
-
-  useEffect(() => {
-    resetTime(config.durationSeconds);
-  }, [config.durationSeconds, resetTime]);
 
   useEffect(() => {
     if (isRunning && !isPaused && timeLeft > 0 && config.mode !== 'zen') {
