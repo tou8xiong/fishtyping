@@ -10,23 +10,23 @@ export function Header() {
     <header className="py-4 md:py-5 border-b border-white/5  backdrop-blur-xl sticky top-0 z-50 bg-black/80">
       <div className="w-full px-4 md:px-8 flex justify-between items-center border-2 border-white">
         <Link href="/" className="flex items-center gap-3 group transition-all duration-300">
-          <div className="w-9 h-9 md:w-10 md:h-10 bg-primary rounded-xl rotate-12 flex items-center justify-center shadow-[0_0_20px_rgba(11,175,231,0.3)] group-hover:rotate-0 transition-transform duration-300">
-            <span className="text-black font-black text-lg md:text-xl -rotate-12 group-hover:rotate-0 transition-transform duration-300">F</span>
+          <div className="w-10 h-10 bg-primary rounded-xl rotate-12 flex items-center justify-center shadow-[0_0_20px_rgba(11,175,231,0.3)] group-hover:rotate-0 transition-transform duration-300">
+            <span className="text-black font-black text-xl -rotate-12 group-hover:rotate-0 transition-transform duration-300">F</span>
           </div>
-          <span className="text-xl md:text-2xl font-black tracking-tight bg-gradient-to-r from-white to-white/60 bg-clip-text text-transparent">FishTyping</span>
+          <span className="text-xl md:text-2xl font-black tracking-tight bg-gradient-to-r from-white to-white/60 bg-clip-text text-transparent italic">FishTyping</span>
         </Link>
 
         <nav className="hidden md:flex items-center gap-8 lg:gap-10 text-sm font-semibold tracking-wide">
-          <Link href="/typing" className="text-foreground/60 hover:text-primary transition-all duration-200 px-3 py-2 rounded-lg hover:bg-white/5">PRACTICE</Link>
-          <Link href="/leaderboard" className="text-foreground/60 hover:text-primary transition-all duration-200 px-3 py-2 rounded-lg hover:bg-white/5">LEADERBOARD</Link>
-          <Link href="/settings" className="text-foreground/60 hover:text-primary transition-all duration-200 px-3 py-2 rounded-lg hover:bg-white/5">SETTINGS</Link>
+          <Link href="/typing" className="text-foreground/60 hover:text-primary transition-all duration-200">PRACTICE</Link>
+          <Link href="/leaderboard" className="text-foreground/60 hover:text-primary transition-all duration-200">LEADERBOARD</Link>
+          <Link href="/settings" className="text-foreground/60 hover:text-primary transition-all duration-200">SETTINGS</Link>
         </nav>
 
         <div className="flex items-center gap-3 md:gap-4">
-          <Link href="/login" className="hidden sm:block px-6 py-2.5 md:px-7 md:py-3 rounded-lg text-sm font-bold text-foreground/80 hover:text-foreground hover:bg-white/5 border border-white/10 hover:border-white/20 transition-all duration-200">
+          <Link href="/login" className="hidden sm:block px-5 py-2 md:px-6 md:py-2.5 rounded-full text-sm font-bold text-foreground/80 hover:text-foreground transition-colors">
             Log In
           </Link>
-          <Link href="/register" className="inline-flex bg-primary text-black px-7 py-2.5 md:py-3 rounded-lg text-sm font-black hover:scale-105 active:scale-95 transition-all shadow-[0_0_20px_rgba(11,175,231,0.2)] hover:shadow-[0_0_30px_rgba(11,175,231,0.4)] border border-primary hover:border-white/40">
+          <Link href="/register" className="inline-flex bg-primary text-black px-6 py-2.5 md:py-3 rounded-sm text-sm font-black hover:scale-105 active:scale-95 transition-all shadow-[0_0_20px_rgba(11,175,231,0.2)]">
             GET STARTED
           </Link>
           <button

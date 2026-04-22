@@ -143,23 +143,23 @@ function getWordList(difficulty: Difficulty): string[] {
 function generateSimplePassage(difficulty: Difficulty, length: Length, theme: Theme): string {
   const wordList = getWordList(difficulty);
   const targetWords = length === 'short' ? 30 : length === 'medium' ? 60 : 100;
-  
+
   const themePassages = THEMES[theme];
   const mainPassage = sample(themePassages);
-  
+
   const words = mainPassage.split(' ');
-  
+
   let currentLength = words.length;
   const shuffled = shuffle([...wordList]);
   let wordIndex = 0;
-  
+
   while (currentLength < targetWords) {
     const nextWord = shuffled[wordIndex % shuffled.length];
     words.push(nextWord);
     wordIndex++;
     currentLength++;
   }
-  
+
   const result = words.join(' ');
   return result.charAt(0).toUpperCase() + result.slice(1) + '.';
 }
@@ -173,7 +173,7 @@ function generateComplexPassage(difficulty: Difficulty, length: Length): string 
     }
     return sentences.join(' ');
   }
-  
+
   if (difficulty === 'advanced') {
     const targetSentences = length === 'short' ? 2 : length === 'medium' ? 3 : 5;
     const sentences: string[] = [];
@@ -183,7 +183,7 @@ function generateComplexPassage(difficulty: Difficulty, length: Length): string 
     }
     return shuffle(sentences).slice(0, targetSentences).join(' ');
   }
-  
+
   return generateSimplePassage(difficulty, length, 'general');
 }
 
@@ -205,23 +205,23 @@ export function generatePassage(
     const shuffled = shuffle([...PUNCTUATION_PASSAGES]);
     return shuffled.slice(0, targetSentences).join(' ');
   }
-  
+
   if (challengeType === 'numbers') {
     const targetSentences = length === 'short' ? 2 : length === 'medium' ? 3 : 5;
     const shuffled = shuffle([...NUMBER_PASSAGES]);
     return shuffled.slice(0, targetSentences).join(' ');
   }
-  
+
   if (challengeType === 'speed') {
     const targetLines = length === 'short' ? 3 : length === 'medium' ? 5 : 8;
     const shuffled = shuffle([...SPEED_PASSAGES]);
     return shuffled.slice(0, targetLines).join(' ');
   }
-  
+
   if (difficulty === 'expert' || difficulty === 'advanced') {
     return generateComplexPassage(difficulty, length);
   }
-  
+
   return generateSimplePassage(difficulty, length, theme);
 }
 
@@ -236,16 +236,16 @@ export function getUniquePassage(
 ): string {
   let attempts = 0;
   let passage = '';
-  
+
   do {
     passage = generatePassage(difficulty, length, theme, challengeType, language);
     attempts++;
   } while (usedPassages.has(passage) && attempts < 10);
-  
+
   if (usedPassages.size >= 50) {
     usedPassages.clear();
   }
-  
+
   usedPassages.add(passage);
   return passage;
 }
