@@ -7,46 +7,42 @@ export function Header() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   return (
-    <header className="py-4 md:py-5 border-b border-white/5  backdrop-blur-xl sticky top-0 z-50 bg-black/80">
-      <div className="w-full px-4 md:px-8 flex justify-between items-center border-2 border-white">
-        <Link href="/" className="flex items-center gap-3 group transition-all duration-300">
-          <div className="w-10 h-10 bg-primary rounded-xl rotate-12 flex items-center justify-center shadow-[0_0_20px_rgba(11,175,231,0.3)] group-hover:rotate-0 transition-transform duration-300">
-            <span className="text-black font-black text-xl -rotate-12 group-hover:rotate-0 transition-transform duration-300">F</span>
-          </div>
-          <span className="text-xl md:text-2xl font-black tracking-tight bg-gradient-to-r from-white to-white/60 bg-clip-text text-transparent italic">FishTyping</span>
+    <header className="py-4 md:py-4 border-b border-primary/20 backdrop-blur-xl sticky top-0 z-50 bg-gradient-to-b from-black/95 to-black/90">
+      <div className="w-full px-4 md:px-8 flex justify-around items-center ">
+        <Link href="/" className="flex items-center gap-3 group  transition-all duration-300">
+          <svg width="32" height="32" viewBox="0 0 20 22" fill="none" xmlns="http://www.w3.org/2000/svg" className="group-hover:scale-110 transition-transform">
+            <path d="M1 12.5L9 1V12.5H1ZM4.825 10.5H7V7.375L4.825 10.5ZM10.5 12.5C10.7 12.0333 10.9167 11.2167 11.15 10.05C11.3833 8.88333 11.5 7.7 11.5 6.5C11.5 5.3 11.3875 4.06667 11.1625 2.8C10.9375 1.53333 10.7167 0.6 10.5 0C11.5167 0.3 12.5292 0.858333 13.5375 1.675C14.5458 2.49167 15.4542 3.46667 16.2625 4.6C17.0708 5.73333 17.7292 6.97917 18.2375 8.3375C18.7458 9.69583 19 11.0833 19 12.5H10.5ZM13.1 10.5H16.8C16.5167 9.21667 16.0542 8.04167 15.4125 6.975C14.7708 5.90833 14.0917 5 13.375 4.25C13.4083 4.6 13.4375 4.9625 13.4625 5.3375C13.4875 5.7125 13.5 6.1 13.5 6.5C13.5 7.28333 13.4625 8.00833 13.3875 8.675C13.3125 9.34167 13.2167 9.95 13.1 10.5ZM7 18C6.4 18 5.84167 17.8583 5.325 17.575C4.80833 17.2917 4.36667 16.9333 4 16.5C3.76667 16.75 3.5125 16.9833 3.2375 17.2C2.9625 17.4167 2.65833 17.5917 2.325 17.725C1.74167 17.2917 1.24583 16.7542 0.8375 16.1125C0.429167 15.4708 0.15 14.7667 0 14H20C19.85 14.7667 19.5708 15.4708 19.1625 16.1125C18.7542 16.7542 18.2583 17.2917 17.675 17.725C17.3417 17.5917 17.0375 17.4167 16.7625 17.2C16.4875 16.9833 16.2333 16.75 16 16.5C15.6167 16.9333 15.1708 17.2917 14.6625 17.575C14.1542 17.8583 13.6 18 13 18C12.4 18 11.8417 17.8583 11.325 17.575C10.8083 17.2917 10.3667 16.9333 10 16.5C9.63333 16.9333 9.19167 17.2917 8.675 17.575C8.15833 17.8583 7.6 18 7 18ZM0 22V20H1C1.53333 20 2.05417 19.9167 2.5625 19.75C3.07083 19.5833 3.55 19.3333 4 19C4.45 19.3333 4.92917 19.5792 5.4375 19.7375C5.94583 19.8958 6.46667 19.975 7 19.975C7.53333 19.975 8.05 19.8958 8.55 19.7375C9.05 19.5792 9.53333 19.3333 10 19C10.45 19.3333 10.9292 19.5792 11.4375 19.7375C11.9458 19.8958 12.4667 19.975 13 19.975C13.5333 19.975 14.05 19.8958 14.55 19.7375C15.05 19.5792 15.5333 19.3333 16 19C16.4667 19.3333 16.95 19.5833 17.45 19.75C17.95 19.9167 18.4667 20 19 20H20V22H19C18.4833 22 17.975 21.9375 17.475 21.8125C16.975 21.6875 16.4833 21.5 16 21.25C15.5167 21.5 15.025 21.6875 14.525 21.8125C14.025 21.9375 13.5167 22 13 22C12.4833 22 11.975 21.9375 11.475 21.8125C10.975 21.6875 10.4833 21.5 10 21.25C9.51667 21.5 9.025 21.6875 8.525 21.8125C8.025 21.9375 7.51667 22 7 22C6.48333 22 5.975 21.9375 5.475 21.8125C4.975 21.6875 4.48333 21.5 4 21.25C3.51667 21.5 3.025 21.6875 2.525 21.8125C2.025 21.9375 1.51667 22 1 22H0Z" fill="#0BAFE7" />
+          </svg>
+          <span className="text-xl  md:text-2xl font-black tracking-tight bg-gradient-to-r from-white to-white/60 bg-clip-text text-transparent italic px-2">FishTyping</span>
         </Link>
 
-        <nav className="hidden md:flex items-center gap-8 lg:gap-10 text-sm font-semibold tracking-wide">
-          <Link href="/typing" className="text-foreground/60 hover:text-primary transition-all duration-200">PRACTICE</Link>
-          <Link href="/leaderboard" className="text-foreground/60 hover:text-primary transition-all duration-200">LEADERBOARD</Link>
-          <Link href="/settings" className="text-foreground/60 hover:text-primary transition-all duration-200">SETTINGS</Link>
+        <nav className="hidden md:flex items-center gap-10 lg:gap-12 text-xs font-black tracking-widest">
+          <Link href="/" className="text-foreground/60 relative pb-2 hover:text-primary transition-all duration-200 group">
+            HOME
+            <div className="absolute bottom-0 left-0 w-0 h-0.5 bg-primary group-hover:w-full transition-all duration-300" />
+          </Link>
+          <Link href="/leaderboard" className="text-foreground/60 relative pb-2 hover:text-primary transition-all duration-200 group">
+            LEADERBOARD
+            <div className="absolute bottom-0 left-0 w-0 h-0.5 bg-primary group-hover:w-full transition-all duration-300" />
+          </Link>
+          <Link href="/settings" className="text-foreground/60 relative pb-2 hover:text-primary transition-all duration-200 group">
+            SETTINGS
+            <div className="absolute bottom-0 left-0 w-0 h-0.5 bg-primary group-hover:w-full transition-all duration-300" />
+          </Link>
         </nav>
 
         <div className="flex items-center gap-3 md:gap-4">
-          <Link href="/login" className="hidden sm:block px-5 py-2 md:px-6 md:py-2.5 rounded-full text-sm font-bold text-foreground/80 hover:text-foreground transition-colors">
-            Log In
+          <Link href="/login"
+            className="inline-flex items-center justify-center
+             rounded-full text-sm font-black text-primary hover:text-foreground transition-colors
+              tracking-widest border border-primary/50 hover:border-primary">
+            <span className="px-3 py-3 md:px-10 md:py-2">LOGIN</span>
           </Link>
-          <Link href="/register" className="inline-flex bg-primary text-black px-6 py-2.5 md:py-3 rounded-sm text-sm font-black hover:scale-105 active:scale-95 transition-all shadow-[0_0_20px_rgba(11,175,231,0.2)]">
-            GET STARTED
-          </Link>
-          <button
-            className="md:hidden p-2 text-foreground/60 hover:text-primary"
-            onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-          >
-            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              {mobileMenuOpen ? (
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-              ) : (
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
-              )}
-            </svg>
-          </button>
         </div>
       </div>
 
       {mobileMenuOpen && (
         <div className="md:hidden mt-4 pb-4 space-y-3 border-t border-white/10 pt-4">
-          <Link href="/typing" className="block py-2 text-foreground/80 hover:text-primary transition-colors" onClick={() => setMobileMenuOpen(false)}>PRACTICE</Link>
           <Link href="/leaderboard" className="block py-2 text-foreground/80 hover:text-primary transition-colors" onClick={() => setMobileMenuOpen(false)}>LEADERBOARD</Link>
           <Link href="/settings" className="block py-2 text-foreground/80 hover:text-primary transition-colors" onClick={() => setMobileMenuOpen(false)}>SETTINGS</Link>
           <Link href="/login" className="block py-2 text-foreground/80 hover:text-primary transition-colors" onClick={() => setMobileMenuOpen(false)}>Log In</Link>

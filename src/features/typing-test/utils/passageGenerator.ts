@@ -4,6 +4,107 @@ export type Theme = 'technology' | 'nature' | 'science' | 'history' | 'general';
 export type ChallengeType = 'standard' | 'punctuation' | 'numbers' | 'speed';
 export type Language = 'english' | 'lao';
 
+interface GeneratePassageParams {
+  theme?: Theme;
+  difficulty?: Difficulty;
+  length?: Length;
+  challengeType?: ChallengeType;
+  language?: Language;
+}
+
+const API_KEY = 'AIzaSyCVEuIkBW7HKjb-F54nb-nBqAgDa7XgfNU';
+
+async function callGemini(prompt: string, retries = 3): Promise<string> {
+  for (let attempt = 0; attempt < retries; attempt++) {
+    const response = await fetch('https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=' + API_KEY, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        contents: [
+          {
+            role: 'user',
+            parts: [{ text: prompt }],
+          },
+        ],
+        generationConfig: {
+          temperature: 0.9,
+          topP: 0.95,
+          topK: 40,
+          maxOutputTokens: 2048,
+        },
+      }),
+    });
+
+    if (response.ok) {
+      const data = await response.json();
+      const passage = data.candidates?.[0]?.content?.parts?.[0]?.text;
+      if (passage) {
+        return passage;
+      }
+    }
+
+    if (response.status === 429) {
+      const waitTime = Math.pow(2, attempt) * 1000;
+      await new Promise(resolve => setTimeout(resolve, waitTime));
+      continue;
+    }
+
+    const errorText = await response.text();
+    console.error('Gemini API error:', response.status, errorText);
+  }
+  throw new Error('Max retries exceeded');
+}
+
+export async function generatePassageWithGemini(params: GeneratePassageParams): Promise<string> {
+  const { theme, difficulty, length, challengeType, language } = params;
+
+  const lengthGuide: Record<string, string> = {
+    short: '50-80 words',
+    medium: '100-150 words',
+    long: '200-300 words',
+  };
+
+  const difficultyGuide: Record<string, string> = {
+    beginner: 'simple and easy to understand words',
+    intermediate: 'moderate vocabulary with some complex words',
+    advanced: 'sophisticated vocabulary and complex sentence structures',
+    expert: 'highly advanced and specialized vocabulary',
+  };
+
+  const challengeGuide: Record<string, string> = {
+    standard: 'normal text with regular punctuation',
+    punctuation: 'heavy use of commas, semicolons, dashes, and parentheses',
+    numbers: 'include numbers, percentages, currency, and measurements throughout',
+    speed: 'short sentences with simple structure for fast typing practice',
+  };
+
+  const langGuide = language === 'lao' ? 'in Lao language' : 'in English';
+
+  const prompt = `Generate a ${length} typing passage (${lengthGuide[length as keyof typeof lengthGuide] || '100-150 words'}) ${langGuide}.
+
+Theme: ${theme}
+Difficulty: ${difficulty} (${difficultyGuide[difficulty as keyof typeof difficultyGuide]})
+Challenge Type: ${challengeType} (${challengeGuide[challengeType as keyof typeof challengeGuide]})
+
+Requirements:
+- Generate only the passage text, no additional text or explanation
+- Make sure the content is engaging and relevant to the theme
+- ${challengeType === 'punctuation' ? 'Include abundant punctuation marks' : ''}
+- ${challengeType === 'numbers' ? 'Incorporate numbers and numerical values naturally' : ''}
+- ${challengeType === 'speed' ? 'Use short, simple sentences for rapid typing' : ''}
+- No explanations, just the raw passage text`;
+
+  try {
+    const passage = await callGemini(prompt);
+    return passage;
+  } catch (error) {
+    console.error('Gemini generation failed:', error);
+    return getRandomPassage(params);
+  }
+}
+
 const LAO_PASSAGES = [
   'ສະບາຍດີ ຍິນດີຕ້ອນຮັບເຂົ້າສູ່ລະບົບການຝຶກພິມພາສາລາວ ທີ່ທັນສະໄຫມທີ່ສຸດ.',
   'ປະເທດລາວ ເປັນປະເທດທີ່ມີຄວາມສວຍງາມທາງທຳມະຊາດ ແລະ ວັດທະນະທຳທີ່ເປັນເອກະລັກ.',
@@ -65,7 +166,7 @@ const THEMES: Record<Theme, string[]> = {
     'Music has the ability to evoke strong emotions in listeners of all ages.',
     'A warm cup of coffee is the perfect way to start a busy work day.',
     'People gather together to celebrate special occasions and milestones.',
-    'The city came alive at night with lights from thousands of windows.',
+    'ty came alive at night with lights from thousands of windows.',
     'Learning new skills takes time, patience, and dedicated practice.',
   ],
 };
@@ -248,4 +349,14 @@ export function getUniquePassage(
 
   usedPassages.add(passage);
   return passage;
+}
+
+function getRandomPassage(params: GeneratePassageParams): string {
+  return getUniquePassage(
+    params.difficulty || 'intermediate',
+    params.length || 'medium',
+    params.theme || 'general',
+    params.challengeType || 'standard',
+    params.language || 'english'
+  );
 }

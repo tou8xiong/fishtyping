@@ -1,26 +1,25 @@
 "use client";
 
-import React, { useEffect, useState, useCallback } from 'react';
+import React, { useEffect, useState, useCallback, useRef } from 'react';
 import { useTypingEngine } from '../hooks/useTypingEngine';
-import { getUniquePassage, Difficulty, Length, Theme, ChallengeType, Language } from '../utils/passageGenerator';
-import { FaRotateRight, FaFire, FaRocket, FaKeyboard } from "react-icons/fa6";
-import { FiGlobe, FiActivity } from "react-icons/fi";
+import { getUniquePassage, generatePassageWithGemini, Difficulty, Length, Theme, ChallengeType, Language } from '../utils/passageGenerator';
+import { FaRotateRight } from "react-icons/fa6";
 
-// Local helper for class names since src/lib/utils doesn't exist yet
 function cn(...classes: (string | boolean | undefined)[]) {
   return classes.filter(Boolean).join(' ');
 }
 
-type Mode = 'ZEN FLOW' | 'SPRINT' | 'ACCURACY';
-
 export const TypingTest = () => {
-  const [mode, setMode] = useState<Mode>('ZEN FLOW');
   const [difficulty, setDifficulty] = useState<Difficulty>('intermediate');
   const [length, setLength] = useState<Length>('medium');
   const [theme, setTheme] = useState<Theme>('general');
   const [challengeType, setChallengeType] = useState<ChallengeType>('standard');
   const [language, setLanguage] = useState<Language>('english');
+  const [showPassage, setShowPassage] = useState(false);
   const [isMounted, setIsMounted] = useState(false);
+  const [isGenerating, setIsGenerating] = useState(false);
+
+  const inputRef = useRef<HTMLInputElement>(null);
 
   const initialText = useCallback(() =>
     getUniquePassage(difficulty, length, theme, challengeType, language),
@@ -28,24 +27,65 @@ export const TypingTest = () => {
   );
   const [sampleText, setSampleText] = useState(() => initialText());
 
-  const { userInput, stats, isFinished, timeElapsed, handleInputChange, reset, inputRef } = useTypingEngine(sampleText);
+  const { userInput, stats, timeElapsed, handleInputChange, reset } = useTypingEngine(sampleText);
 
   useEffect(() => {
     setIsMounted(true);
     inputRef.current?.focus();
-  }, [inputRef]);
+  }, []);
+
+  const handleRegenerate = useCallback(async () => {
+    setIsGenerating(true);
+    setShowPassage(false);
+    try {
+      const passage = await generatePassageWithGemini({
+        difficulty,
+        length,
+        theme,
+        challengeType,
+        language,
+      });
+      setSampleText(passage);
+    } catch (error) {
+      console.error('Failed to generate passage:', error);
+      setSampleText(initialText());
+    }
+    setIsGenerating(false);
+  }, [difficulty, length, theme, challengeType, language, initialText]);
+
+  const handleReset = useCallback(() => {
+    reset();
+  }, [reset]);
 
   useEffect(() => {
-    setSampleText(initialText());
-    reset();
-  }, [initialText, reset]);
+    if (!isMounted) return;
+    setShowPassage(false);
+    setIsGenerating(true);
+    generatePassageWithGemini({
+      difficulty,
+      length,
+      theme,
+      challengeType,
+      language,
+    })
+      .then((passage) => {
+        setSampleText(passage);
+        reset();
+      })
+      .catch((error) => {
+        console.error('Failed to generate passage:', error);
+        setSampleText(initialText());
+      })
+      .finally(() => {
+        setIsGenerating(false);
+      });
+  // eslint-disable-next-line react-hooks/set-state-in-effect
+  }, [difficulty, length, theme, challengeType, language]);
 
-  const handleRegenerate = useCallback(() => {
-    setSampleText(initialText());
-    reset();
-  }, [initialText, reset]);
+  useEffect(() => {
+    setIsMounted(true);
+  }, []);
 
-  // Keyboard Shortcuts: Tab for language switch, Esc for restart
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === 'Tab') {
@@ -55,7 +95,7 @@ export const TypingTest = () => {
         setLanguage(cycle[nextIndex]);
       } else if (e.key === 'Escape') {
         e.preventDefault();
-        reset();
+        handleReset();
       }
     };
 
@@ -70,167 +110,187 @@ export const TypingTest = () => {
     return `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
   };
 
-  const getLanguageLabel = () => {
-    switch (language) {
-      case 'english': return 'English';
-      case 'lao': return 'Lao (ພາສາລາວ)';
-      default: return 'English';
-    }
-  };
-
   if (!isMounted) return null;
 
   return (
-    <div className="w-full flex flex-col gap-12 border-2 border-transparent max-w-5xl mx-auto mt-40">
-      {/* Top Stats & Settings */}
-      <div className="flex flex-col gap-8">
-        <div className="flex justify-between items-start">
-          <div className="flex gap-16">
-            <div className="flex flex-col">
-              <span className="text-[10px] font-black text-foreground/40 uppercase tracking-widest mb-2">Words Per Minute</span>
-              <div className="flex items-baseline gap-2">
-                <span className="text-6xl font-black text-primary leading-none tracking-tighter">{stats.wpm}</span>
-                <span className="text-xl font-bold text-foreground/40">wpm</span>
-              </div>
-            </div>
-            <div className="flex flex-col">
-              <span className="text-[10px] font-black text-foreground/40 uppercase tracking-widest mb-2">Accuracy</span>
-              <div className="flex items-baseline gap-1">
-                <span className="text-6xl font-black text-foreground leading-none tracking-tighter">{stats.accuracy}</span>
-                <span className="text-2xl font-bold text-foreground/40">%</span>
-              </div>
-            </div>
-          </div>
-
-          <div className="flex gap-3">
-            <div className="flex items-center gap-2 px-4 py-2.5 bg-white/5 rounded-full border border-white/5 shadow-inner transition-all hover:bg-white/10">
-              <FaFire className={cn("text-sm transition-colors", stats.startTime ? "text-orange-400" : "text-foreground/20")} />
-              <span className="text-sm font-bold tabular-nums">{formatTime(timeElapsed)}</span>
-            </div>
-            <div className="flex items-center gap-2 px-4 py-2.5 bg-white/5 rounded-full border border-white/5 shadow-inner transition-all hover:bg-white/10">
-              <FiGlobe className="text-primary text-sm" />
-              <span className="text-sm font-bold">{getLanguageLabel()}</span>
-            </div>
-          </div>
+    <div className="w-full flex flex-col gap-8 max-w-4xl mx-auto">
+      {/* Top Controls Row */}
+      <div className="flex items-center justify-between">
+        <div className="flex gap-3">
+          <select
+            value={difficulty}
+            onChange={(e) => setDifficulty(e.target.value as Difficulty)}
+            className="px-3 py-2 bg-black/40 border border-white/20 rounded-lg text-xs font-bold text-white appearance-none cursor-pointer"
+          >
+            <option value="beginner" className="bg-black text-white">Beginner</option>
+            <option value="intermediate" className="bg-black text-white">Intermediate</option>
+            <option value="advanced" className="bg-black text-white">Advanced</option>
+            <option value="expert" className="bg-black text-white">Expert</option>
+          </select>
+          <select
+            value={length}
+            onChange={(e) => setLength(e.target.value as Length)}
+            className="px-3 py-2 bg-black/40 border border-white/20 rounded-lg text-xs font-bold text-white appearance-none cursor-pointer"
+          >
+            <option value="short" className="bg-black text-white">Short</option>
+            <option value="medium" className="bg-black text-white">Medium</option>
+            <option value="long" className="bg-black text-white">Long</option>
+          </select>
+          <select
+            value={theme}
+            onChange={(e) => setTheme(e.target.value as Theme)}
+            className="px-3 py-2 bg-black/40 border border-white/20 rounded-lg text-xs font-bold text-white appearance-none cursor-pointer"
+          >
+            <option value="general" className="bg-black text-white">General</option>
+            <option value="technology" className="bg-black text-white">Technology</option>
+            <option value="nature" className="bg-black text-white">Nature</option>
+            <option value="science" className="bg-black text-white">Science</option>
+            <option value="history" className="bg-black text-white">History</option>
+          </select>
+          <select
+            value={challengeType}
+            onChange={(e) => setChallengeType(e.target.value as ChallengeType)}
+            className="px-3 py-2 bg-black/40 border border-white/20 rounded-lg text-xs font-bold text-white appearance-none cursor-pointer"
+          >
+            <option value="standard" className="bg-black text-white">Standard</option>
+            <option value="punctuation" className="bg-black text-white">Punctuation</option>
+            <option value="numbers" className="bg-black text-white">Numbers</option>
+            <option value="speed" className="bg-black text-white">Speed</option>
+          </select>
+          <select
+            value={language}
+            onChange={(e) => setLanguage(e.target.value as Language)}
+            className="px-3 py-2 bg-black/40 border border-white/20 rounded-lg text-xs font-bold text-white appearance-none cursor-pointer"
+          >
+            <option value="english" className="bg-black text-white">English</option>
+            <option value="lao" className="bg-black text-white">Lao</option>
+          </select>
         </div>
 
-        {/* Mode Selection Tabs */}
-        <div className="flex gap-8 border-b border-white/5 pb-2">
-          {['ZEN FLOW', 'SPRINT', 'ACCURACY'].map((m) => (
-            <button
-              key={m}
-              onClick={() => setMode(m as Mode)}
-              className={cn(
-                "text-xs font-black tracking-widest transition-all relative pb-4",
-                mode === m ? "text-primary" : "text-foreground/40 hover:text-foreground"
-              )}
-            >
-              {m}
-              {mode === m && (
-                <div className="absolute bottom-0 left-0 w-full h-0.5 bg-primary shadow-[0_0_10px_rgba(11,175,231,0.5)]" />
-              )}
-            </button>
-          ))}
+        {/* Right Stats */}
+        <div className="flex items-center gap-8">
+          <div className="flex flex-col items-center">
+            <span className="text-[9px] font-black text-foreground/40 uppercase tracking-widest mb-1">WPM</span>
+            <span className="text-4xl font-black text-secondary">{stats.wpm}</span>
+          </div>
+          <div className="flex flex-col items-center">
+            <span className="text-[9px] font-black text-foreground/40 uppercase tracking-widest mb-1">ACC</span>
+            <span className="text-4xl font-black text-secondary">{stats.accuracy}%</span>
+          </div>
+          <div className="flex flex-col items-center">
+            <span className="text-[9px] font-black text-foreground/40 uppercase tracking-widest mb-1">TIME</span>
+            <span className="text-4xl font-black text-secondary">{formatTime(timeElapsed)}</span>
+          </div>
         </div>
       </div>
 
       {/* Main Typing Area */}
       <div className="relative">
-        <div
-          className="bg-[#121212] rounded-3xl p-16 md:p-24 min-h-[440px] flex flex-col items-center relative group cursor-text"
-          onClick={() => inputRef.current?.focus()}
-        >
-          <div className="flex-1 flex items-center justify-center w-full mb-12">
-            <div className="max-w-3xl text-3xl md:text-4xl font-medium leading-[1.6] tracking-tight text-foreground/20 select-none whitespace-pre-wrap text-left">
-              {sampleText.split('').map((char, index) => {
-                const isTyped = index < userInput.length;
-                const isCorrect = isTyped && userInput[index] === char;
-                const isCurrent = index === userInput.length;
-
-                return (
-                  <span
-                    key={index}
-                    className={cn(
-                      "transition-all duration-150 relative inline",
-                      isTyped && (isCorrect ? "text-foreground/80" : "text-red-400 bg-red-400/10 rounded-sm"),
-                      isCurrent && "text-foreground/20"
-                    )}
-                  >
-                    {char}
-                    {isCurrent && (
-                      <div className="absolute -bottom-1 left-0 w-full h-[3px] bg-primary shadow-[0_0_8px_rgba(11,175,231,0.8)] animate-pulse" />
-                    )}
-                  </span>
-                );
-              })}
-            </div>
-          </div>
-
-          <input
-            ref={inputRef}
-            type="text"
-            className="opacity-0 absolute inset-0 w-full h-full cursor-default"
-            value={userInput}
-            onChange={handleInputChange}
-            autoFocus
-            autoComplete="off"
-            spellCheck="false"
-          />
-
-          {/* Action Buttons - Now in the flow, not absolute */}
-          <div className="flex items-center gap-12 mt-auto">
-            <button
-              onClick={reset}
-              className="flex flex-col items-center gap-2 group"
-            >
-              <div className="w-10 h-10 rounded-full bg-white/5 flex items-center justify-center group-hover:bg-primary transition-colors">
-                <FaRotateRight className="text-foreground/40 group-hover:text-black text-sm transition-colors" />
+        {!showPassage ? (
+          <div className="bg-[#1a2332] rounded-3xl p-16 md:p-20 min-h-[320px] flex flex-col items-center justify-center relative group cursor-text border border-white/5">
+            <div className="flex-1 flex flex-col items-center justify-center w-full gap-8">
+              <div className="text-center">
+                <p className="text-2xl md:text-3xl font-medium leading-relaxed text-foreground/60">
+                  {isGenerating ? 'Generating passage...' : sampleText.slice(0, 100)}...
+                </p>
               </div>
-              <span className="text-[10px] font-black text-foreground/20 uppercase tracking-widest group-hover:text-foreground/60 transition-colors">Restart (Esc)</span>
-            </button>
-
-            <button
-              onClick={() => {
-                const cycle: Language[] = ['english', 'lao'];
-                const nextIndex = (cycle.indexOf(language) + 1) % cycle.length;
-                setLanguage(cycle[nextIndex]);
-              }}
-              className="flex items-center gap-4 px-10 py-5 rounded-2xl bg-white/5 hover:bg-white/10 border border-white/5 hover:border-primary/20 transition-all group"
-            >
-              <div className="bg-white/10 px-3 py-1.5 rounded-lg text-[11px] font-black text-foreground/60 group-hover:bg-primary group-hover:text-black transition-colors">Tab</div>
-              <span className="text-xs font-black text-foreground/40 uppercase tracking-widest group-hover:text-foreground/80 transition-colors">Switch Language</span>
-            </button>
-          </div>
-        </div>
-      </div>
-
-      {/* Feature Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 pt-8">
-        {[
-          {
-            title: "Power Mode",
-            desc: "Reach 100 WPM to activate kinetic screen effects and double your experience points.",
-            icon: <FaRocket className="text-primary text-xl" />
-          },
-          {
-            title: "Flow State",
-            desc: "Focus on the word center. Avoid looking at your stats until the timer finishes for maximum speed.",
-            icon: <FiActivity className="text-secondary text-xl" />
-          },
-          {
-            title: "Native Support",
-            desc: "Full support for Lao and English scripts with zero-latency input mapping for maximum accuracy.",
-            icon: <FaKeyboard className="text-primary text-xl" />
-          }
-        ].map((card, i) => (
-          <div key={i} className="p-8 bg-[#121212] rounded-2xl border border-white/5 hover:border-white/10 transition-all group">
-            <div className="w-12 h-12 bg-white/5 rounded-2xl flex items-center justify-center mb-6 group-hover:scale-110 transition-transform">
-              {card.icon}
+              <button
+                onClick={() => {
+                  if (isGenerating) return;
+                  setIsGenerating(true);
+                  generatePassageWithGemini({
+                    difficulty,
+                    length,
+                    theme,
+                    challengeType,
+                    language,
+                  })
+                    .then((passage) => {
+                      setSampleText(passage);
+                      setShowPassage(true);
+                      reset();
+                    })
+                    .catch((error) => {
+                      console.error('Failed to generate passage:', error);
+                      setSampleText(initialText());
+                      setShowPassage(true);
+                      reset();
+                    })
+                    .finally(() => {
+                      setIsGenerating(false);
+                    });
+                }}
+                disabled={isGenerating}
+                className="px-8 py-4 bg-primary hover:bg-primary/90 text-black font-bold rounded-xl transition-all flex items-center gap-3 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                <FaRotateRight className={`text-lg ${isGenerating ? 'animate-spin' : ''}`} />
+                {isGenerating ? 'Generating...' : 'Start Typing'}
+              </button>
             </div>
-            <h3 className="text-lg font-black mb-3 tracking-tight">{card.title}</h3>
-            <p className="text-sm text-foreground/40 font-medium leading-relaxed">{card.desc}</p>
           </div>
-        ))}
+        ) : (
+          <div
+            className="bg-[#1a2332] rounded-3xl p-16 md:p-20 min-h-[320px] flex flex-col items-center justify-center relative group cursor-text border border-white/5"
+            onClick={() => inputRef.current?.focus()}
+          >
+            <div className="flex-1 flex items-center justify-center w-full">
+              <div className="max-w-3xl text-3xl md:text-3xl font-medium leading-[1.9] tracking-tight text-foreground/50 select-none whitespace-pre-wrap text-center">
+                {sampleText.split('').map((char, index) => {
+                  const isTyped = index < userInput.length;
+                  const isCorrect = isTyped && userInput[index] === char;
+                  const isCurrent = index === userInput.length;
+
+                  return (
+                    <span
+                      key={index}
+                      className={cn(
+                        "transition-all duration-100 relative inline",
+                        isTyped && (isCorrect ? "text-primary" : "text-red-400"),
+                        isCurrent && "text-foreground/70"
+                      )}
+                    >
+                      {char}
+                      {isCurrent && (
+                        <div className="absolute -bottom-0.5 left-0 w-full h-[3px] bg-primary shadow-[0_0_6px_rgba(11,175,231,0.6)] animate-pulse" />
+                      )}
+                    </span>
+                  );
+                })}
+              </div>
+            </div>
+
+            <input
+              ref={inputRef}
+              type="text"
+              className="opacity-0 absolute inset-0 w-full h-full cursor-default"
+              value={userInput}
+              onChange={handleInputChange}
+              autoFocus
+              autoComplete="off"
+              spellCheck="false"
+            />
+
+            {/* Action Icons at Bottom */}
+            <div className="flex items-center gap-6 mt-12">
+              <button
+                onClick={handleReset}
+                className="p-3 rounded-full bg-white/5 hover:bg-white/10 text-foreground/60 hover:text-foreground transition-all border border-white/5 hover:border-white/10"
+              >
+                <FaRotateRight className="text-lg" />
+              </button>
+
+              <button
+                className="p-3 rounded-full bg-white/5 hover:bg-white/10 text-foreground/60 hover:text-foreground transition-all border border-white/5 hover:border-white/10"
+              >
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <circle cx="12" cy="12" r="1"></circle>
+                  <circle cx="19" cy="12" r="1"></circle>
+                  <circle cx="5" cy="12" r="1"></circle>
+                </svg>
+              </button>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );

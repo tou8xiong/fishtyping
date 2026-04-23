@@ -11,14 +11,14 @@
   --color-muted-foreground: #9ca3af;
   --color-border: var(--border);
   --color-card: var(--card);
-  
+
   --font-sans: var(--font-crimson-text), ui-serif, Georgia, serif;
   --font-serif: var(--font-eb-garamond), ui-serif, Georgia, serif;
   --font-mono: var(--font-geist-mono), ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
 }
 
 :root {
-  --background: #1e1e1e;
+  --background: #121212;
   --foreground: #f8fafc;
   --card: rgba(30, 30, 30, 0.6);
   --border: rgba(60, 60, 60, 0.5);
@@ -28,7 +28,7 @@
 
 @media (prefers-color-scheme: light) {
   :root {
-    --background: #1e1e1e;
+    --background: #121212;
     --foreground: #f8fafc;
     --card: rgba(30, 30, 30, 0.6);
     --border: rgba(60, 60, 60, 0.5);
@@ -37,7 +37,6 @@
 
 * {
   box-sizing: border-box;
-  padding: 0;
   margin: 0;
 }
 
@@ -95,13 +94,27 @@ body {
 }
 
 @keyframes blink {
-  from, to { border-color: transparent; }
-  50% { border-color: var(--primary); }
+
+  from,
+  to {
+    border-color: transparent;
+  }
+
+  50% {
+    border-color: var(--primary);
+  }
 }
 
 @keyframes fade-in {
-  from { opacity: 0; transform: translateY(10px); }
-  to { opacity: 1; transform: translateY(0); }
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 .animate-fade-in {

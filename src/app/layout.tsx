@@ -23,6 +23,9 @@ const jetbrainsMono = JetBrains_Mono({
 export const metadata: Metadata = {
   title: "FishTyping | Master Your Speed",
   description: "A premium typing experience designed for speed and accuracy.",
+  icons: {
+    icon: "/project-Icon.svg",
+  },
 };
 
 export default function RootLayout({
@@ -35,7 +38,7 @@ export default function RootLayout({
       <body className="antialiased">
         <div className="flex flex-col min-h-screen">
           <Header />
-          
+
           <main className="flex-1 flex flex-col">
             {children}
           </main>
