@@ -53,7 +53,17 @@ export const useTypingEngine = (text: string) => {
     setUserInput(value);
 
     if (value.length >= text.length) {
-      setStats(prev => ({ ...prev, endTime: Date.now() }));
+      const endTime = Date.now();
+      const elapsed = endTime - (stats.startTime || endTime);
+      const finalStats = calculateStats(value, elapsed);
+      setStats(prev => ({
+        ...prev,
+        endTime,
+        wpm: finalStats.wpm,
+        accuracy: finalStats.accuracy,
+        errors: finalStats.errors
+      }));
+      setTimeElapsed(elapsed);
       setIsFinished(true);
     }
   };

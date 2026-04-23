@@ -1,66 +1,158 @@
+"use client";
+
 import Link from "next/link";
+import { useSearchParams } from "next/navigation";
+import { useMemo, useState } from "react";
+import { LuArrowRight, LuCircleUserRound, LuCodeXml } from "react-icons/lu";
+import { login, signInWithOAuth } from "./actions";
+
+function FishMark() {
+  return (
+    <svg width="38" height="44" viewBox="0 0 20 22" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <path
+        d="M1 12.5L9 1V12.5H1ZM4.825 10.5H7V7.375L4.825 10.5ZM10.5 12.5C10.7 12.0333 10.9167 11.2167 11.15 10.05C11.3833 8.88333 11.5 7.7 11.5 6.5C11.5 5.3 11.3875 4.06667 11.1625 2.8C10.9375 1.53333 10.7167 0.6 10.5 0C11.5167 0.3 12.5292 0.858333 13.5375 1.675C14.5458 2.49167 15.4542 3.46667 16.2625 4.6C17.0708 5.73333 17.7292 6.97917 18.2375 8.3375C18.7458 9.69583 19 11.0833 19 12.5H10.5ZM13.1 10.5H16.8C16.5167 9.21667 16.0542 8.04167 15.4125 6.975C14.7708 5.90833 14.0917 5 13.375 4.25C13.4083 4.6 13.4375 4.9625 13.4625 5.3375C13.4875 5.7125 13.5 6.1 13.5 6.5C13.5 7.28333 13.4625 8.00833 13.3875 8.675C13.3125 9.34167 13.2167 9.95 13.1 10.5ZM7 18C6.4 18 5.84167 17.8583 5.325 17.575C4.80833 17.2917 4.36667 16.9333 4 16.5C3.76667 16.75 3.5125 16.9833 3.2375 17.2C2.9625 17.4167 2.65833 17.5917 2.325 17.725C1.74167 17.2917 1.24583 16.7542 0.8375 16.1125C0.429167 15.4708 0.15 14.7667 0 14H20C19.85 14.7667 19.5708 15.4708 19.1625 16.1125C18.7542 16.7542 18.2583 17.2917 17.675 17.725C17.3417 17.5917 17.0375 17.4167 16.7625 17.2C16.4875 16.9833 16.2333 16.75 16 16.5C15.6167 16.9333 15.1708 17.2917 14.6625 17.575C14.1542 17.8583 13.6 18 13 18C12.4 18 11.8417 17.8583 11.325 17.575C10.8083 17.2917 10.3667 16.9333 10 16.5C9.63333 16.9333 9.19167 17.2917 8.675 17.575C8.15833 17.8583 7.6 18 7 18ZM0 22V20H1C1.53333 20 2.05417 19.9167 2.5625 19.75C3.07083 19.5833 3.55 19.3333 4 19C4.45 19.3333 4.92917 19.5792 5.4375 19.7375C5.94583 19.8958 6.46667 19.975 7 19.975C7.53333 19.975 8.05 19.8958 8.55 19.7375C9.05 19.5792 9.53333 19.3333 10 19C10.45 19.3333 10.9292 19.5792 11.4375 19.7375C11.9458 19.8958 12.4667 19.975 13 19.975C13.5333 19.975 14.05 19.8958 14.55 19.7375C15.05 19.5792 15.5333 19.3333 16 19C16.4667 19.3333 16.95 19.5833 17.45 19.75C17.95 19.9167 18.4667 20 19 20H20V22H19C18.4833 22 17.975 21.9375 17.475 21.8125C16.975 21.6875 16.4833 21.5 16 21.25C15.5167 21.5 15.025 21.6875 14.525 21.8125C14.025 21.9375 13.5167 22 13 22C12.4833 22 11.975 21.9375 11.475 21.8125C10.975 21.6875 10.475 21.5 10 21.25C9.525 21.5 9.025 21.6875 8.525 21.8125C8.025 21.9375 7.51667 22 7 22C6.48333 22 5.975 21.9375 5.475 21.8125C4.975 21.6875 4.48333 21.5 4 21.25C3.51667 21.5 3.025 21.6875 2.525 21.8125C2.025 21.9375 1.51667 22 1 22H0Z"
+        fill="var(--primary)"
+      />
+    </svg>
+  );
+}
 
 export default function LoginPage() {
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
+  const searchParams = useSearchParams();
+
+  const oauthError = useMemo(() => {
+    const errorCode = searchParams.get("error");
+    const message = searchParams.get("message");
+
+    if (!errorCode) {
+      return "";
+    }
+
+    if (message) {
+      return `${errorCode}: ${message}`;
+    }
+
+    return errorCode;
+  }, [searchParams]);
+
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    setLoading(true);
+    setError("");
+
+    const formData = new FormData(e.currentTarget);
+    const result = await login(formData);
+
+    if (result?.error) {
+      setError(result.error);
+      setLoading(false);
+    }
+  };
+
+  const handleOAuth = async (provider: "google" | "github") => {
+    setLoading(true);
+    setError("");
+    await signInWithOAuth(provider);
+  };
+
   return (
-    <div className="flex-1 flex flex-col items-center justify-center py-20 px-6 relative overflow-hidden bg-[#020617]">
-      <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_-20%,#1e293b,transparent)] pointer-events-none" />
+    <section className="relative flex-1 overflow-hidden bg-background px-6 py-16">
+      <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(11,175,231,0.08),transparent_35%)]" />
 
-      <div className="w-full max-w-md z-10 animate-fade-in">
-        <div className="text-center mb-10 space-y-3">
-          <Link href="/" className="inline-block w-12 h-12 bg-primary rounded-xl rotate-12 flex items-center justify-center mx-auto mb-6 shadow-[0_0_30px_rgba(11,175,231,0.3)]">
-            <span className="text-black font-black text-2xl -rotate-12">F</span>
-          </Link>
-          <h1 className="text-5xl font-black tracking-tight text-white">Welcome Back</h1>
-          <p className="text-lg text-white/50 font-medium">Enter your credentials to continue your journey.</p>
-        </div>
-
-        <div className="glass p-8 rounded-md shadow-2xl border-white/5 space-y-6">
-          <div className="space-y-2">
-            <label className="text-xs font-black uppercase tracking-widest text-foreground/40 px-1">Email Address</label>
-            <input
-              type="email"
-              placeholder="name@example.com"
-              className="w-full bg-white/5 border border-white/10 rounded-md px-5 py-4 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all placeholder:text-foreground/20"
-            />
-          </div>
-          <div className="space-y-2">
-            <div className="flex justify-between items-center px-1">
-              <label className="text-xs font-black uppercase tracking-widest text-foreground/40">Password</label>
-              <a href="#" className="text-[10px] font-black uppercase tracking-widest text-primary/60 hover:text-primary">Forgot?</a>
+      <div className="relative mx-auto flex min-h-[calc(100vh-10rem)] max-w-md items-center justify-center animate-fade-in">
+        <div className="glass w-full rounded-xl border border-primary/35 px-5 py-8 shadow-[0_0_40px_rgba(11,175,231,0.08)] sm:px-7">
+          <div className="mb-8 text-center">
+            <div className="mb-3 flex justify-center">
+              <FishMark />
             </div>
-            <input
-              type="password"
-              placeholder="••••••••"
-              className="w-full bg-white/5 border border-white/10 rounded-md px-5 py-4 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all placeholder:text-foreground/20"
-            />
+            <h1 className="text-4xl font-black uppercase tracking-tight text-primary drop-shadow-[0_0_16px_rgba(11,175,231,0.28)]">
+              FishTyping
+            </h1>
+            <p className="mt-2 text-base text-foreground/65">Type faster. Swim farther.</p>
           </div>
-          <button className="w-full bg-primary text-black font-black py-4 rounded-md shadow-[0_10px_30px_rgba(11,175,231,0.2)] hover:scale-[1.02] active:scale-[0.98] transition-all">
-            SIGN IN
-          </button>
 
-          <div className="relative py-2">
-            <div className="absolute inset-0 flex items-center"><div className="w-full border-t border-white/10"></div></div>
-            <div className="relative flex justify-center text-sm font-bold uppercase tracking-widest text-white/30">
-              <span className="bg-[#1e1e1e] px-6">Or continue with</span>
+          <form onSubmit={handleSubmit} className="space-y-4">
+            <div className="space-y-1.5">
+              <label className="block text-[11px] font-black uppercase tracking-[0.24em] text-foreground/65">
+                Email
+              </label>
+              <input
+                name="email"
+                type="email"
+                required
+                placeholder="diver@ocean.net"
+                className="w-full rounded-sm border border-border bg-white/[0.03] px-4 py-3 text-sm text-foreground placeholder:text-foreground/25 focus:border-primary/60 focus:outline-none focus:ring-0"
+              />
             </div>
+
+            <div className="space-y-1.5">
+              <div className="flex items-center justify-between">
+                <label className="block text-[11px] font-black uppercase tracking-[0.24em] text-foreground/65">
+                  Password
+                </label>
+                <a href="#" className="text-[10px] font-black text-primary/80 transition-colors hover:text-primary">
+                  Forgot?
+                </a>
+              </div>
+              <input
+                name="password"
+                type="password"
+                required
+                placeholder="••••••••"
+                className="w-full rounded-sm border border-border bg-white/[0.03] px-4 py-3 text-sm text-foreground placeholder:text-foreground/25 focus:border-primary/60 focus:outline-none focus:ring-0"
+              />
+            </div>
+
+            {(error || oauthError) && (
+              <p className="rounded-sm border border-red-500/20 bg-red-500/10 px-3 py-2 text-xs text-red-300">
+                {error || oauthError}
+              </p>
+            )}
+
+            <button
+              disabled={loading}
+              className="flex w-full items-center justify-center gap-2 rounded-sm bg-[linear-gradient(90deg,rgba(11,175,231,0.95),rgba(107,204,247,0.95))] px-4 py-3 text-base font-black text-background shadow-[0_0_24px_rgba(11,175,231,0.24)] transition-all hover:scale-[1.01] disabled:opacity-50"
+            >
+              {loading ? "Signing in..." : "Dive In"}
+              <LuArrowRight className="h-4 w-4" />
+            </button>
+          </form>
+
+          <div className="my-6 flex items-center gap-3">
+            <div className="h-px flex-1 bg-border" />
+            <span className="text-[10px] font-black uppercase tracking-[0.22em] text-foreground/35">or</span>
+            <div className="h-px flex-1 bg-border" />
           </div>
 
-          <div className="grid grid-cols-2 gap-4">
-            <button className="flex items-center justify-center gap-3 glass glass-hover py-3 rounded-md text-xs font-bold">
-              <svg className="w-4 h-4" viewBox="0 0 24 24"><path fill="currentColor" d="M12.48 10.92v3.28h7.84c-.24 1.84-.908 3.152-2.108 4.024-1.2 1.2-3.128 1.944-5.732 1.944-4.828 0-8.8-3.972-8.8-8.8s3.972-8.8 8.8-8.8c2.612 0 4.56 1.032 5.952 2.368l2.32-2.32C18.664 1.344 15.936 0 12.48 0 5.856 0 0 5.856 0 12.48s5.856 12.48 12.48 12.48c3.504 0 6.144-1.152 8.16-3.264 2.088-2.088 2.748-5.004 2.748-7.392 0-.468-.036-.912-.108-1.344H12.48z" /></svg>
-              Google
+          <div className="space-y-2.5">
+            <button
+              onClick={() => handleOAuth("google")}
+              disabled={loading}
+              className="flex w-full items-center justify-center gap-2 rounded-sm border border-border bg-transparent px-4 py-3 text-sm text-foreground/80 transition-colors hover:border-primary/35 hover:text-foreground disabled:opacity-50"
+            >
+              <LuCircleUserRound className="h-4 w-4" />
+              Continue with Google
             </button>
-            <button className="flex items-center justify-center gap-3 glass glass-hover py-3 rounded-md text-xs font-bold">
-              <svg className="w-4 h-4" viewBox="0 0 24 24"><path fill="currentColor" d="M12 .297c-6.63 0-12 5.373-12 12 0 5.303 3.438 9.8 8.205 11.385.6.113.82-.258.82-.577 0-.285-.01-1.04-.015-2.04-3.338.724-4.042-1.61-4.042-1.61C4.422 18.07 3.633 17.7 3.633 17.7c-1.087-.744.084-.729.084-.729 1.205.084 1.838 1.236 1.838 1.236 1.07 1.835 2.809 1.305 3.495.998.108-.776.417-1.305.76-1.605-2.665-.3-5.466-1.332-5.466-5.93 0-1.31.465-2.38 1.235-3.22-.135-.303-.54-1.523.105-3.176 0 0 1.005-.322 3.3 1.23.96-.267 1.98-.399 3-.405 1.02.006 2.04.138 3 .405 2.28-1.552 3.285-1.23 3.285-1.23.645 1.653.24 2.873.12 3.176.765.84 1.23 1.91 1.23 3.22 0 4.61-2.805 5.625-5.475 5.92.42.36.81 1.096.81 2.22 0 1.606-.015 2.896-.015 3.286 0 .315.21.69.825.57C20.565 22.092 24 17.592 24 12.297c0-6.627-5.373-12-12-12" /></svg>
-              Github
+            <button
+              onClick={() => handleOAuth("github")}
+              disabled={loading}
+              className="flex w-full items-center justify-center gap-2 rounded-sm border border-border bg-transparent px-4 py-3 text-sm text-foreground/80 transition-colors hover:border-primary/35 hover:text-foreground disabled:opacity-50"
+            >
+              <LuCodeXml className="h-4 w-4" />
+              Continue with GitHub
             </button>
           </div>
+
+          <p className="mt-6 text-center text-sm text-foreground/65">
+            New to the depths?{" "}
+            <Link href="/register" className="text-primary transition-colors hover:text-primary/80">
+              Sign Up
+            </Link>
+          </p>
         </div>
-
-        <p className="text-center mt-10 text-base text-white/50 font-medium">
-          Don't have an account? <Link href="/register" className="text-primary font-bold hover:underline underline-offset-4">Sign up for free</Link>
-        </p>
       </div>
-    </div>
+    </section>
   );
 }

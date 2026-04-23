@@ -1,0 +1,221 @@
+"use client";
+
+import { LuActivity, LuBomb, LuGauge, LuHistory, LuRotateCcw, LuSave, LuTarget, LuTrophy, LuUserRound } from "react-icons/lu";
+import { useAuth } from "@/hooks/useAuth";
+import { useRouter } from "next/navigation";
+import { useEffect, useState } from "react";
+
+interface UserStats {
+  totalSessions: number;
+  totalWordsTyped: number;
+  averageWpm: number;
+  averageAccuracy: number;
+  bestWpm: number;
+  totalTimeMinutes: number;
+}
+
+const defaultStats: UserStats = {
+  totalSessions: 0,
+  totalWordsTyped: 0,
+  averageWpm: 0,
+  averageAccuracy: 0,
+  bestWpm: 0,
+  totalTimeMinutes: 0,
+};
+
+export default function ProfilePage() {
+  const { user, loading } = useAuth();
+  const router = useRouter();
+  const [stats, setStats] = useState<UserStats>(defaultStats);
+  const [editing, setEditing] = useState(false);
+  const [displayName, setDisplayName] = useState("");
+  const [username, setUsername] = useState("");
+
+  useEffect(() => {
+    if (!loading && !user) {
+      router.push("/login?redirect=/profile");
+    }
+  }, [loading, user, router]);
+
+  useEffect(() => {
+    if (user) {
+      setDisplayName(user.display_name || "");
+      setUsername(user.username || "");
+    }
+  }, [user]);
+
+  const handleSave = async () => {
+    setEditing(false);
+  };
+
+  const initials = (user?.display_name || user?.username || user?.email || "U")
+    .charAt(0)
+    .toUpperCase();
+
+  if (loading) {
+    return (
+      <section className="relative flex-1 overflow-hidden bg-background px-4 py-8 md:px-8 md:py-10">
+        <div className="flex items-center justify-center py-20">
+          <div className="h-12 w-12 animate-spin rounded-full border-4 border-primary/20 border-t-primary" />
+        </div>
+      </section>
+    );
+  }
+
+  if (!user) {
+    return null;
+  }
+
+  return (
+    <section className="relative flex-1 overflow-hidden bg-background px-4 py-8 md:px-8 md:py-10">
+      <div className="pointer-events-none absolute inset-x-0 top-0 h-px bg-primary/30" />
+      <div className="pointer-events-none absolute left-20 top-32 h-56 w-56 rounded-full bg-primary/8 blur-[150px]" />
+
+      <div className="relative mx-auto flex w-full max-w-6xl flex-col gap-6 animate-fade-in">
+        <section className="glass rounded-xl border border-border/80 px-5 py-6 md:px-7 md:py-7">
+          <div className="space-y-1">
+            <div className="flex items-center gap-3">
+              <LuUserRound className="h-5 w-5 text-primary" />
+              <h1 className="text-3xl font-black tracking-tight text-foreground md:text-4xl">
+                Diver Profile
+              </h1>
+            </div>
+            <p className="text-base text-foreground/65">Your typing journey at a glance.</p>
+          </div>
+
+          <div className="mt-5 h-px w-full bg-border/80" />
+
+          <div className="mt-5 flex flex-col gap-5 md:flex-row md:items-start">
+            <div className="flex h-28 w-28 items-center justify-center rounded-xl border border-primary/60 bg-primary/10 shadow-[0_0_20px_rgba(11,175,231,0.18)]">
+              <div className="flex h-24 w-24 items-center justify-center rounded-lg bg-[radial-gradient(circle_at_35%_30%,rgba(11,175,231,0.45),rgba(11,175,231,0.1)_45%,rgba(18,18,18,0.9)_85%)] text-4xl font-black text-foreground">
+                {initials}
+              </div>
+            </div>
+
+            <div className="flex-1 space-y-4">
+              <div className="space-y-1.5">
+                <label className="block text-[11px] font-black uppercase tracking-[0.24em] text-foreground/55">
+                  Callsign
+                </label>
+                {editing ? (
+                  <input
+                    type="text"
+                    value={displayName}
+                    onChange={(e) => setDisplayName(e.target.value)}
+                    className="w-full rounded-md border border-primary/60 bg-white/[0.03] px-4 py-3 text-base text-foreground shadow-[inset_0_1px_0_rgba(255,255,255,0.02)] focus:border-primary/60 focus:outline-none"
+                  />
+                ) : (
+                  <div className="rounded-md border border-border bg-white/[0.03] px-4 py-3 text-base text-foreground/90 shadow-[inset_0_1px_0_rgba(255,255,255,0.02)]">
+                    {user?.display_name || user?.username || "Not set"}
+                  </div>
+                )}
+              </div>
+
+              <div className="space-y-1.5">
+                <label className="block text-[11px] font-black uppercase tracking-[0.24em] text-foreground/55">
+                  Comms Link
+                </label>
+                <div className="rounded-md border border-border bg-white/[0.03] px-4 py-3 text-base text-foreground/90 shadow-[inset_0_1px_0_rgba(255,255,255,0.02)]">
+                  {user?.email || "Not available"}
+                </div>
+              </div>
+
+              <div className="flex gap-2">
+                {editing ? (
+                  <button
+                    onClick={handleSave}
+                    className="flex items-center gap-2 rounded-md border border-primary/60 bg-primary/10 px-4 py-2 text-sm font-black text-primary transition-colors hover:bg-primary/20"
+                  >
+                    <LuSave className="h-4 w-4" />
+                    SAVE
+                  </button>
+                ) : (
+                  <button
+                    onClick={() => setEditing(true)}
+                    className="flex items-center gap-2 rounded-md border border-border bg-white/[0.03] px-4 py-2 text-sm font-black text-foreground/80 transition-colors hover:border-primary/40 hover:text-foreground"
+                  >
+                    <LuRotateCcw className="h-4 w-4" />
+                    EDIT PROFILE
+                  </button>
+                )}
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section className="glass rounded-xl border border-border/80 px-5 py-6 md:px-7 md:py-7">
+          <div className="space-y-1">
+            <div className="flex items-center gap-3">
+              <LuTrophy className="h-5 w-5 text-primary/80" />
+              <h2 className="text-2xl font-black tracking-tight text-foreground/65">Statistics</h2>
+            </div>
+          </div>
+
+          <div className="mt-5 grid grid-cols-2 gap-4 md:grid-cols-4">
+            <div className="rounded-lg border border-border/60 bg-white/[0.02] p-4">
+              <div className="flex items-center gap-2 text-primary/60">
+                <LuActivity className="h-4 w-4" />
+                <span className="text-xs font-black uppercase tracking-wider">Sessions</span>
+              </div>
+              <div className="mt-2 text-3xl font-black text-foreground">{stats.totalSessions}</div>
+            </div>
+
+            <div className="rounded-lg border border-border/60 bg-white/[0.02] p-4">
+              <div className="flex items-center gap-2 text-primary/60">
+                <LuGauge className="h-4 w-4" />
+                <span className="text-xs font-black uppercase tracking-wider">Avg WPM</span>
+              </div>
+              <div className="mt-2 text-3xl font-black text-foreground">{stats.averageWpm}</div>
+            </div>
+
+            <div className="rounded-lg border border-border/60 bg-white/[0.02] p-4">
+              <div className="flex items-center gap-2 text-primary/60">
+                <LuTarget className="h-4 w-4" />
+                <span className="text-xs font-black uppercase tracking-wider">Accuracy</span>
+              </div>
+              <div className="mt-2 text-3xl font-black text-foreground">{stats.averageAccuracy}%</div>
+            </div>
+
+            <div className="rounded-lg border border-border/60 bg-white/[0.02] p-4">
+              <div className="flex items-center gap-2 text-primary/60">
+                <LuBomb className="h-4 w-4" />
+                <span className="text-xs font-black uppercase tracking-wider">Best WPM</span>
+              </div>
+              <div className="mt-2 text-3xl font-black text-foreground">{stats.bestWpm}</div>
+            </div>
+          </div>
+
+          <div className="mt-4 grid grid-cols-2 gap-4 md:grid-cols-2">
+            <div className="rounded-lg border border-border/60 bg-white/[0.02] p-4">
+              <div className="flex items-center gap-2 text-primary/60">
+                <LuHistory className="h-4 w-4" />
+                <span className="text-xs font-black uppercase tracking-wider">Total Words</span>
+              </div>
+              <div className="mt-2 text-2xl font-black text-foreground">{stats.totalWordsTyped.toLocaleString()}</div>
+            </div>
+
+            <div className="rounded-lg border border-border/60 bg-white/[0.02] p-4">
+              <div className="flex items-center gap-2 text-primary/60">
+                <LuHistory className="h-4 w-4" />
+                <span className="text-xs font-black uppercase tracking-wider">Time Practiced</span>
+              </div>
+              <div className="mt-2 text-2xl font-black text-foreground">{Math.floor(stats.totalTimeMinutes / 60)}h {stats.totalTimeMinutes % 60}m</div>
+            </div>
+          </div>
+        </section>
+
+        <section className="glass rounded-xl border border-border/80 px-5 py-7 md:px-7">
+          <div className="space-y-1">
+            <div className="flex items-center gap-3">
+              <LuHistory className="h-5 w-5 text-primary/80" />
+              <h2 className="text-2xl font-black tracking-tight text-foreground/65">Recent Activity</h2>
+            </div>
+            <p className="text-base text-foreground/40">No recent sessions. Start typing to see your history!</p>
+          </div>
+
+          <div className="mt-5 h-px w-full bg-border/80" />
+        </section>
+      </div>
+    </section>
+  );
+}

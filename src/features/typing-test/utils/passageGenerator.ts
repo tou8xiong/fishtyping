@@ -1,8 +1,12 @@
-export type Difficulty = 'beginner' | 'intermediate' | 'advanced' | 'expert';
-export type Length = 'short' | 'medium' | 'long';
-export type Theme = 'technology' | 'nature' | 'science' | 'history' | 'general';
-export type ChallengeType = 'standard' | 'punctuation' | 'numbers' | 'speed';
-export type Language = 'english' | 'lao';
+"use client";
+
+import { createClient } from "@/lib/supabase/client";
+import { getAvailablePassage, releasePassage, savePassageHistory } from "@/lib/supabase/db";
+import type { Difficulty, Length, Theme, ChallengeType, Language, Passage } from "@/lib/supabase/types";
+import { WORD_COUNT_BY_DIFFICULTY } from "@/lib/supabase/types";
+
+export type { Difficulty, Length, Theme, ChallengeType, Language, Passage };
+export { WORD_COUNT_BY_DIFFICULTY };
 
 interface GeneratePassageParams {
   theme?: Theme;
@@ -12,97 +16,19 @@ interface GeneratePassageParams {
   language?: Language;
 }
 
-const API_KEY = 'AIzaSyCVEuIkBW7HKjb-F54nb-nBqAgDa7XgfNU';
-
-async function callGemini(prompt: string, retries = 3): Promise<string> {
-  for (let attempt = 0; attempt < retries; attempt++) {
-    const response = await fetch('https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=' + API_KEY, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        contents: [
-          {
-            role: 'user',
-            parts: [{ text: prompt }],
-          },
-        ],
-        generationConfig: {
-          temperature: 0.9,
-          topP: 0.95,
-          topK: 40,
-          maxOutputTokens: 2048,
-        },
-      }),
-    });
-
-    if (response.ok) {
-      const data = await response.json();
-      const passage = data.candidates?.[0]?.content?.parts?.[0]?.text;
-      if (passage) {
-        return passage;
-      }
-    }
-
-    if (response.status === 429) {
-      const waitTime = Math.pow(2, attempt) * 1000;
-      await new Promise(resolve => setTimeout(resolve, waitTime));
-      continue;
-    }
-
-    const errorText = await response.text();
-    console.error('Gemini API error:', response.status, errorText);
-  }
-  throw new Error('Max retries exceeded');
-}
-
 export async function generatePassageWithGemini(params: GeneratePassageParams): Promise<string> {
-  const { theme, difficulty, length, challengeType, language } = params;
+  // This function is deprecated - passages should come from the API
+  // Fallback to simple passage if called
+  const { difficulty = 'intermediate' } = params;
 
-  const lengthGuide: Record<string, string> = {
-    short: '50-80 words',
-    medium: '100-150 words',
-    long: '200-300 words',
+  const fallbackPassages: Record<Difficulty, string> = {
+    beginner: 'The cat sat on the mat. It was a sunny day. Birds sang in the trees.',
+    intermediate: 'The quick brown fox jumps over the lazy dog and then it ran away into the deep blue ocean to find some fish to eat but it could not swim very well.',
+    advanced: 'Technology has revolutionized the way we communicate and interact with each other. From smartphones to social media platforms, digital innovation continues to shape our daily lives in unprecedented ways. The future promises even more exciting developments.',
+    expert: 'Artificial intelligence and machine learning algorithms have become increasingly sophisticated, enabling computers to perform complex tasks that were once thought to be exclusively within the domain of human intelligence. These technological advancements are transforming industries ranging from healthcare to finance, creating new opportunities while also raising important ethical questions about privacy, automation, and the future of work in an increasingly digital world.'
   };
 
-  const difficultyGuide: Record<string, string> = {
-    beginner: 'simple and easy to understand words',
-    intermediate: 'moderate vocabulary with some complex words',
-    advanced: 'sophisticated vocabulary and complex sentence structures',
-    expert: 'highly advanced and specialized vocabulary',
-  };
-
-  const challengeGuide: Record<string, string> = {
-    standard: 'normal text with regular punctuation',
-    punctuation: 'heavy use of commas, semicolons, dashes, and parentheses',
-    numbers: 'include numbers, percentages, currency, and measurements throughout',
-    speed: 'short sentences with simple structure for fast typing practice',
-  };
-
-  const langGuide = language === 'lao' ? 'in Lao language' : 'in English';
-
-  const prompt = `Generate a ${length} typing passage (${lengthGuide[length as keyof typeof lengthGuide] || '100-150 words'}) ${langGuide}.
-
-Theme: ${theme}
-Difficulty: ${difficulty} (${difficultyGuide[difficulty as keyof typeof difficultyGuide]})
-Challenge Type: ${challengeType} (${challengeGuide[challengeType as keyof typeof challengeGuide]})
-
-Requirements:
-- Generate only the passage text, no additional text or explanation
-- Make sure the content is engaging and relevant to the theme
-- ${challengeType === 'punctuation' ? 'Include abundant punctuation marks' : ''}
-- ${challengeType === 'numbers' ? 'Incorporate numbers and numerical values naturally' : ''}
-- ${challengeType === 'speed' ? 'Use short, simple sentences for rapid typing' : ''}
-- No explanations, just the raw passage text`;
-
-  try {
-    const passage = await callGemini(prompt);
-    return passage;
-  } catch (error) {
-    console.error('Gemini generation failed:', error);
-    return getRandomPassage(params);
-  }
+  return fallbackPassages[difficulty];
 }
 
 const LAO_PASSAGES = [
@@ -359,4 +285,59 @@ function getRandomPassage(params: GeneratePassageParams): string {
     params.challengeType || 'standard',
     params.language || 'english'
   );
+}
+
+const client = typeof window !== "undefined" ? createClient() : null;
+
+export async function fetchPassageFromDB(params: {
+  difficulty?: Difficulty;
+  length?: Length;
+  theme?: Theme;
+  challengeType?: ChallengeType;
+  language?: Language;
+}): Promise<Passage | null> {
+  try {
+    return await getAvailablePassage({
+      difficulty: params.difficulty || 'intermediate',
+      length: params.length || 'medium',
+      theme: params.theme || 'general',
+      challengeType: params.challengeType || 'standard',
+      language: params.language || 'english',
+    });
+  } catch {
+    return null;
+  }
+}
+
+export async function returnPassageToPool(passageId: string): Promise<void> {
+  try {
+    await releasePassage(passageId);
+  } catch {
+    // Silently fail if DB is unavailable
+  }
+}
+
+export async function trackPassageResult(data: {
+  passageId: string;
+  wpm: number;
+  accuracy: number;
+  durationMs: number;
+}): Promise<void> {
+  try {
+    const supabase = client;
+    if (!supabase) return;
+
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return;
+
+    await savePassageHistory({
+      userId: user.id,
+      passageId: data.passageId,
+      wpm: data.wpm,
+      accuracy: data.accuracy,
+      durationMs: data.durationMs,
+    });
+  } catch {
+    // Silently fail if DB is unavailable
+  }
 }
