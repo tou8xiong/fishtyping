@@ -287,8 +287,6 @@ function getRandomPassage(params: GeneratePassageParams): string {
   );
 }
 
-const client = typeof window !== "undefined" ? createClient() : null;
-
 export async function fetchPassageFromDB(params: {
   difficulty?: Difficulty;
   length?: Length;
@@ -324,9 +322,9 @@ export async function trackPassageResult(data: {
   durationMs: number;
 }): Promise<void> {
   try {
-    const supabase = client;
-    if (!supabase) return;
+    if (typeof window === "undefined") return;
 
+    const supabase = createClient();
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return;
 

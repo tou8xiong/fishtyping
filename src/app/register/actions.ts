@@ -27,7 +27,9 @@ async function ensureUserProfile(supabase: Awaited<ReturnType<typeof createClien
       ? user.user_metadata.full_name.trim()
       : username;
 
-  await supabase.from("users").upsert(
+  console.log('ensureUserProfile: creating profile', { id: user.id, username, displayName });
+
+  const { error } = await supabase.from("users").upsert(
     {
       id: user.id,
       username,
@@ -37,6 +39,12 @@ async function ensureUserProfile(supabase: Awaited<ReturnType<typeof createClien
     },
     { onConflict: "id" }
   );
+
+  if (error) {
+    console.error('ensureUserProfile: failed to create profile', error);
+  } else {
+    console.log('ensureUserProfile: profile created successfully');
+  }
 }
 
 export async function login(formData: FormData) {

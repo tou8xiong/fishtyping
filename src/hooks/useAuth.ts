@@ -14,6 +14,8 @@ interface AuthState {
   error?: string;
 }
 
+let cachedProfile: User | null = null;
+
 export function useAuth() {
   const [authState, setAuthState] = useState<AuthState>({
     user: null,
@@ -39,13 +41,34 @@ export function useAuth() {
       if (session?.user) {
         console.log('useAuth: fetching profile for user', session.user.id);
 
-        const { data: profile, error: profileError } = await supabase
-          .from("users")
-          .select("*")
-          .eq("id", session.user.id)
-          .single();
+        let profile = cachedProfile;
 
-        console.log('useAuth: profile fetch result', { hasProfile: !!profile, error: profileError?.message });
+        if (!profile || profile.id !== session.user.id) {
+          try {
+            const { data: fetchedProfile, error: profileError } = await supabase
+              .from("users")
+              .select("*")
+              .eq("id", session.user.id)
+              .maybeSingle();
+
+            console.log('useAuth: profile fetch result', {
+              hasProfile: !!fetchedProfile,
+              error: profileError?.message,
+              profile: fetchedProfile
+            });
+
+            if (profileError) {
+              console.error('useAuth: profile fetch error', profileError);
+            } else if (fetchedProfile) {
+              profile = fetchedProfile as User;
+              cachedProfile = profile;
+            }
+          } catch (fetchError: any) {
+            console.error('useAuth: profile fetch failed', fetchError);
+          }
+        } else {
+          console.log('useAuth: using cached profile');
+        }
 
         const combinedUser: AuthUser = {
           ...(profile as User || {}),
@@ -55,7 +78,11 @@ export function useAuth() {
           display_name: profile?.display_name || session.user.user_metadata?.full_name || session.user.user_metadata?.username || session.user.email?.split("@")[0] || null,
         };
 
-        console.log('useAuth: onAuthStateChange setting user', { username: combinedUser.username, display_name: combinedUser.display_name });
+        console.log('useAuth: onAuthStateChange setting user', {
+          username: combinedUser.username,
+          display_name: combinedUser.display_name,
+          fullUser: combinedUser
+        });
 
         setAuthState({
           user: combinedUser,

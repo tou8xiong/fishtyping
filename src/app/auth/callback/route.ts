@@ -24,7 +24,9 @@ async function ensureUserProfile(
   const avatarUrl =
     typeof user.user_metadata?.avatar_url === "string" ? user.user_metadata.avatar_url : null;
 
-  await supabase.from("users").upsert(
+  console.log('ensureUserProfile (callback): creating profile', { id: user.id, username, displayName, avatarUrl });
+
+  const { error } = await supabase.from("users").upsert(
     {
       id: user.id,
       username,
@@ -35,6 +37,12 @@ async function ensureUserProfile(
     },
     { onConflict: "id" }
   );
+
+  if (error) {
+    console.error('ensureUserProfile (callback): failed to create profile', error);
+  } else {
+    console.log('ensureUserProfile (callback): profile created successfully');
+  }
 }
 
 export async function GET(request: NextRequest) {
