@@ -1,5 +1,5 @@
 import { createClient as createSupabaseClient } from "./client";
-import type { Passage, PassageHistory, User, GenerationJob, Difficulty, Length, Theme, ChallengeType, Language } from "./types";
+import type { Passage, PassageHistory, User, GenerationJob, Difficulty, Length, Language } from "./types";
 
 let client: ReturnType<typeof createSupabaseClient> | null = null;
 
@@ -13,13 +13,11 @@ function getClient() {
 export async function getAvailablePassage(params: {
   difficulty?: Difficulty;
   length?: Length;
-  theme?: Theme;
-  challengeType?: ChallengeType;
   language?: Language;
   userId?: string;
 }): Promise<Passage | null> {
   const supabase = getClient();
-  const { difficulty = 'intermediate', length = 'medium', theme = 'general', challengeType = 'standard', language = 'english', userId } = params;
+  const { difficulty = 'beginner', length = 'medium', language = 'english', userId } = params;
 
   let query = supabase
     .from('passages')
@@ -30,14 +28,6 @@ export async function getAvailablePassage(params: {
     .eq('language', language)
     .order('used_count', { ascending: true })
     .limit(20);
-
-  if (theme && theme !== 'general') {
-    query = query.eq('theme', theme);
-  }
-
-  if (challengeType && challengeType !== 'standard') {
-    query = query.eq('challenge_type', challengeType);
-  }
 
   const { data: passages, error } = await query;
 
@@ -115,8 +105,6 @@ export async function createGenerationJob(job: {
   language?: Language;
   difficulty?: Difficulty;
   length?: Length;
-  theme?: Theme;
-  challengeType?: ChallengeType;
   priority?: number;
 }): Promise<string> {
   const supabase = getClient();
@@ -126,8 +114,6 @@ export async function createGenerationJob(job: {
       language: job.language || 'english',
       difficulty: job.difficulty,
       length: job.length,
-      theme: job.theme,
-      challenge_type: job.challengeType,
       priority: job.priority || 0,
       status: 'pending',
     })
@@ -181,8 +167,6 @@ export async function saveGeneratedPassage(passage: {
   language: Language;
   difficulty: Difficulty;
   length: Length;
-  theme: Theme;
-  challengeType: ChallengeType;
   aiModel: string;
   jobId?: string;
 }): Promise<string> {
@@ -196,8 +180,6 @@ export async function saveGeneratedPassage(passage: {
       language: passage.language,
       difficulty: passage.difficulty,
       length: passage.length,
-      theme: passage.theme,
-      challenge_type: passage.challengeType,
       status: 'ready',
       generated_by: 'ai',
       ai_model: passage.aiModel,
@@ -211,25 +193,25 @@ export async function saveGeneratedPassage(passage: {
   return data?.id;
 }
 
-export async function checkPoolThresholds(): Promise<{ difficulty: Difficulty; length: Length; theme: Theme; challengeType: ChallengeType; count: number }[]> {
+export async function checkPoolThresholds(): Promise<{ difficulty: Difficulty; length: Length; count: number }[]> {
   const supabase = getClient();
   const { data, error } = await supabase
     .from('passages')
-    .select('difficulty, length, theme, challenge_type')
+    .select('difficulty, length')
     .eq('status', 'ready');
 
   if (error || !data) return [];
 
   const counts = new Map<string, number>();
   data.forEach(p => {
-    const key = `${p.difficulty}-${p.length}-${p.theme}-${p.challenge_type}`;
+    const key = `${p.difficulty}-${p.length}`;
     counts.set(key, (counts.get(key) || 0) + 1);
   });
 
-  const result: { difficulty: Difficulty; length: Length; theme: Theme; challengeType: ChallengeType; count: number }[] = [];
+  const result: { difficulty: Difficulty; length: Length; count: number }[] = [];
   counts.forEach((count, key) => {
-    const [difficulty, length, theme, challengeType] = key.split('-') as [Difficulty, Length, Theme, ChallengeType];
-    result.push({ difficulty, length, theme, challengeType, count });
+    const [difficulty, length] = key.split('-') as [Difficulty, Length];
+    result.push({ difficulty, length, count });
   });
 
   return result;

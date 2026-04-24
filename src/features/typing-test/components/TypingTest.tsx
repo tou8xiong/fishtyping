@@ -2,7 +2,7 @@
 
 import React, { useEffect, useState, useCallback, useRef } from 'react';
 import { useTypingEngine } from '../hooks/useTypingEngine';
-import { trackPassageResult, Difficulty, Theme, ChallengeType, Language, WORD_COUNT_BY_DIFFICULTY } from '../utils/passageGenerator';
+import { trackPassageResult, Difficulty, Language, WORD_COUNT_BY_DIFFICULTY } from '../utils/passageGenerator';
 import { FaRotateRight } from "react-icons/fa6";
 
 function cn(...classes: (string | boolean | undefined)[]) {
@@ -10,9 +10,7 @@ function cn(...classes: (string | boolean | undefined)[]) {
 }
 
 export const TypingTest = () => {
-  const [difficulty, setDifficulty] = useState<Difficulty>('intermediate');
-  const [theme, setTheme] = useState<Theme>('general');
-  const [challengeType, setChallengeType] = useState<ChallengeType>('standard');
+  const [difficulty, setDifficulty] = useState<Difficulty>('beginner');
   const [language, setLanguage] = useState<Language>('english');
   const [isMounted, setIsMounted] = useState(false);
   const [isGenerating, setIsGenerating] = useState(false);
@@ -29,9 +27,9 @@ export const TypingTest = () => {
     inputRef.current?.focus();
   }, []);
 
-  // Save results when typing is finished
+  // Save results when typing is finished (only for Expert level)
   useEffect(() => {
-    if (isFinished && currentPassageId && stats.wpm > 0) {
+    if (isFinished && currentPassageId && stats.wpm > 0 && difficulty === 'expert') {
       trackPassageResult({
         passageId: currentPassageId,
         wpm: stats.wpm,
@@ -39,20 +37,17 @@ export const TypingTest = () => {
         durationMs: timeElapsed,
       }).catch(err => console.error('Failed to save result:', err));
     }
-  }, [isFinished, currentPassageId, stats.wpm, stats.accuracy, timeElapsed]);
+  }, [isFinished, currentPassageId, stats.wpm, stats.accuracy, timeElapsed, difficulty]);
 
   const loadNewPassage = useCallback(async () => {
     setIsGenerating(true);
     try {
-      // Call API to get passage from DB or generate new one
       const response = await fetch('/api/generate-passage', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           difficulty,
-          length: 'medium', // Still send length for backward compatibility with DB
-          theme,
-          challengeType,
+          length: 'medium',
           language,
         }),
       });
@@ -62,32 +57,37 @@ export const TypingTest = () => {
         setSampleText(data.passage);
         setCurrentPassageId(data.passageId || null);
       } else {
-        // Fallback: use a simple default passage
-        setSampleText('The quick brown fox jumps over the lazy dog and then it ran away into the deep blue ocean to find some fish to eat.');
+        // Use local fallback
+        const fallbacks: Record<Difficulty, string> = {
+          beginner: 'The cat sat on the mat. It was a sunny day. Birds sang in the trees.',
+          advanced: 'Technology has revolutionized the way we communicate and interact with each other. From smartphones to social media platforms, digital innovation continues to shape our daily lives.',
+          expert: 'Artificial intelligence and machine learning algorithms have become increasingly sophisticated, enabling computers to perform complex tasks that were once thought to be exclusively within the domain of human intelligence.'
+        };
+        setSampleText(fallbacks[difficulty]);
         setCurrentPassageId(null);
       }
     } catch (error) {
-      console.error('Failed to load passage:', error);
-      // Fallback: use a simple default passage
-      setSampleText('The quick brown fox jumps over the lazy dog and then it ran away into the deep blue ocean to find some fish to eat.');
+      const fallbacks: Record<Difficulty, string> = {
+        beginner: 'The cat sat on the mat. It was a sunny day. Birds sang in the trees.',
+        advanced: 'Technology has revolutionized the way we communicate and interact with each other. From smartphones to social media platforms, digital innovation continues to shape our daily lives.',
+        expert: 'Artificial intelligence and machine learning algorithms have become increasingly sophisticated, enabling computers to perform complex tasks that were once thought to be exclusively within the domain of human intelligence.'
+      };
+      setSampleText(fallbacks[difficulty]);
       setCurrentPassageId(null);
     }
     setIsGenerating(false);
-  }, [difficulty, theme, challengeType, language]);
+  }, [difficulty, language]);
 
-  const handleRegenerate = useCallback(async () => {
-    await loadNewPassage();
-  }, [loadNewPassage]);
-
-  const handleReset = useCallback(() => {
+  const handleReset = useCallback(async () => {
     reset();
-  }, [reset]);
+    await loadNewPassage();
+  }, [reset, loadNewPassage]);
 
   // Load initial passage on mount and when settings change
   useEffect(() => {
     if (!isMounted) return;
     loadNewPassage();
-  }, [isMounted, difficulty, theme, challengeType, language, loadNewPassage]);
+  }, [isMounted, loadNewPassage]);
 
   useEffect(() => {
     setIsMounted(true);
@@ -120,7 +120,7 @@ export const TypingTest = () => {
   if (!isMounted) return null;
 
   return (
-    <div className="w-full flex flex-col gap-8 max-w-4xl mx-auto">
+    <div className="w-full flex flex-col gap-8 max-w-5xl mx-auto">
       {/* Fish Icon */}
       <div className="flex items-center justify-center">
         <svg width="48" height="52" viewBox="0 0 20 22" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -130,25 +130,48 @@ export const TypingTest = () => {
 
       {/* Top Controls Row */}
       <div className="flex items-center justify-between">
-        <div className="flex gap-2">
-          <select
-            value={difficulty}
-            onChange={(e) => setDifficulty(e.target.value as Difficulty)}
-            className="px-3 py-1.5 bg-black/40 border border-primary/30 rounded text-[10px] font-bold text-white/80 appearance-none cursor-pointer hover:border-primary/50 transition-colors"
-          >
-            <option value="beginner" className="bg-black text-white">Beginner (15-30 words)</option>
-            <option value="intermediate" className="bg-black text-white">Intermediate (40-80 words)</option>
-            <option value="advanced" className="bg-black text-white">Advanced (100-150 words)</option>
-            <option value="expert" className="bg-black text-white">Expert (200-300 words)</option>
-          </select>
-          <select
-            value={language}
-            onChange={(e) => setLanguage(e.target.value as Language)}
-            className="px-3 py-1.5 bg-black/40 border border-primary/30 rounded text-[10px] font-bold text-white/80 appearance-none cursor-pointer hover:border-primary/50 transition-colors"
-          >
-            <option value="english" className="bg-black text-white">English</option>
-            <option value="lao" className="bg-black text-white">Lao</option>
-          </select>
+        <div className="flex items-center gap-6">
+          {/* Difficulty Level */}
+          <div className="flex items-center gap-2">
+            <span className="text-[9px] font-bold text-foreground/40 uppercase tracking-wider">Level</span>
+            <div className="flex gap-2">
+              {(['beginner', 'advanced', 'expert'] as Difficulty[]).map((level) => (
+                <button
+                  key={level}
+                  onClick={() => setDifficulty(level)}
+                  className={cn(
+                    "px-4 py-1.5 text-[10px] font-bold rounded-lg transition-all duration-75 border",
+                    difficulty === level
+                      ? "bg-primary/20 text-black border-primary shadow-[0_0_12px_rgba(11,175,231,0.4)]"
+                      : "bg-black/40 text-white/60 border-white/10 hover:border-primary/50 hover:text-white/90"
+                  )}
+                >
+                  {level.charAt(0).toUpperCase() + level.slice(1)}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* Language */}
+          <div className="flex items-center gap-2">
+            <span className="text-[9px] font-bold text-foreground/40 uppercase tracking-wider">Lang</span>
+            <div className="flex gap-2">
+              {(['english', 'lao'] as Language[]).map((lang) => (
+                <button
+                  key={lang}
+                  onClick={() => setLanguage(lang)}
+                  className={cn(
+                    "px-4 py-1.5 text-[10px] font-bold rounded-lg transition-all duration-75 border",
+                    language === lang
+                      ? "bg-primary/20 text-black border-primary shadow-[0_0_12px_rgba(11,175,231,0.4)]"
+                      : "bg-black/40 text-white/60 border-white/10 hover:border-primary/50 hover:text-white/90"
+                  )}
+                >
+                  {lang.charAt(0).toUpperCase() + lang.slice(1)}
+                </button>
+              ))}
+            </div>
+          </div>
         </div>
 
         {/* Right Stats */}
@@ -198,9 +221,9 @@ export const TypingTest = () => {
               </div>
 
               <button
-                onClick={async () => {
+                onClick={() => {
                   reset();
-                  await loadNewPassage();
+                  loadNewPassage();
                 }}
                 className="px-8 py-4 bg-primary hover:bg-primary/90 text-black font-bold rounded-lg transition-all text-lg"
               >
@@ -214,7 +237,7 @@ export const TypingTest = () => {
             onClick={() => inputRef.current?.focus()}
           >
             <div className="flex-1 flex items-center justify-center w-full">
-              <div className="max-w-3xl text-2xl md:text-2xl font-normal leading-[1.8] tracking-normal text-foreground/40 select-none whitespace-pre-wrap text-left">
+              <div className="w-full text-2xl md:text-3xl font-normal leading-[2] tracking-wide text-foreground/40 select-none whitespace-pre-wrap text-left">
                 {sampleText.split('').map((char, index) => {
                   const isTyped = index < userInput.length;
                   const isCorrect = isTyped && userInput[index] === char;
@@ -249,28 +272,31 @@ export const TypingTest = () => {
               autoComplete="off"
               spellCheck="false"
             />
-
-            {/* Action Icons at Bottom */}
-            <div className="flex items-center gap-4 mt-8">
-              <button
-                onClick={handleReset}
-                className="p-2.5 rounded-lg bg-white/5 hover:bg-white/10 text-foreground/50 hover:text-foreground transition-all border border-white/10 hover:border-white/20"
-              >
-                <FaRotateRight className="text-base" />
-              </button>
-
-              <button
-                className="p-2.5 rounded-lg bg-white/5 hover:bg-white/10 text-foreground/50 hover:text-foreground transition-all border border-white/10 hover:border-white/20"
-              >
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                  <circle cx="12" cy="12" r="1"></circle>
-                  <circle cx="19" cy="12" r="1"></circle>
-                  <circle cx="5" cy="12" r="1"></circle>
-                </svg>
-              </button>
-            </div>
           </div>
         )}
+      </div>
+
+      {/* Action Icons Below Typing Area */}
+      <div className="flex items-center justify-center gap-4">
+        <button
+          onClick={handleReset}
+          className="p-2.5 rounded-lg bg-white/5 hover:bg-white/10 text-foreground/50 hover:text-foreground transition-all border border-white/10 hover:border-white/20"
+          title="New Passage"
+        >
+          <FaRotateRight className="text-base" />
+        </button>
+
+        <button
+          onClick={() => window.location.href = '/settings'}
+          className="p-2.5 rounded-lg bg-white/5 hover:bg-white/10 text-foreground/50 hover:text-foreground transition-all border border-white/10 hover:border-white/20"
+          title="Settings"
+        >
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+            <circle cx="12" cy="12" r="1"></circle>
+            <circle cx="19" cy="12" r="1"></circle>
+            <circle cx="5" cy="12" r="1"></circle>
+          </svg>
+        </button>
       </div>
     </div>
   );

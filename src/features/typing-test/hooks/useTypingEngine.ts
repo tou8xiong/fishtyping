@@ -24,22 +24,29 @@ export const useTypingEngine = (text: string) => {
   const inputRef = useRef<HTMLInputElement>(null);
 
   const calculateStats = useCallback((currentInput: string, elapsed: number) => {
-    const words = currentInput.length / 5; // Standard: 5 chars = 1 word
     const minutes = elapsed / 60000;
-    const wpm = minutes > 0 ? Math.round(words / minutes) : 0;
 
-    let errors = 0;
+    // Count uncorrected errors (characters that don't match the target)
+    let uncorrectedErrors = 0;
     for (let i = 0; i < currentInput.length; i++) {
       if (currentInput[i] !== text[i]) {
-        errors++;
+        uncorrectedErrors++;
       }
     }
 
-    const accuracy = currentInput.length > 0
-      ? Math.round(((currentInput.length - errors) / currentInput.length) * 100)
-      : 100;
+    // Gross WPM = (Total Characters Typed ÷ 5) ÷ Minutes
+    const grossWpm = minutes > 0 ? Math.round((currentInput.length / 5) / minutes) : 0;
 
-    return { wpm, accuracy, errors };
+    // Error Rate = uncorrected errors ÷ minutes
+    const errorRate = minutes > 0 ? uncorrectedErrors / minutes : 0;
+
+    // Net WPM = Gross WPM − Error Rate
+    const netWpm = Math.max(0, Math.round(grossWpm - errorRate));
+
+    // Accuracy = (Net WPM ÷ Gross WPM) × 100
+    const accuracy = grossWpm > 0 ? Math.round((netWpm / grossWpm) * 100) : 100;
+
+    return { wpm: netWpm, accuracy, errors: uncorrectedErrors };
   }, [text]);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {

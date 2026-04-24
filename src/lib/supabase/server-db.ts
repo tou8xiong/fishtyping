@@ -1,22 +1,60 @@
 import { createClient } from "@/lib/supabase/server";
-import { getAvailablePassage, releasePassage, savePassageHistory, saveGeneratedPassage } from "@/lib/supabase/db";
-import type { Difficulty, Length, Theme, ChallengeType, Language, Passage } from "@/lib/supabase/types";
+import { releasePassage, savePassageHistory, saveGeneratedPassage } from "@/lib/supabase/db";
+import type { Difficulty, Length, Language, Passage } from "@/lib/supabase/types";
 
 export async function fetchPassage(params: {
   difficulty?: Difficulty;
   length?: Length;
-  theme?: Theme;
-  challengeType?: ChallengeType;
   language?: Language;
+  userId?: string;
 }): Promise<Passage | null> {
   try {
-    return await getAvailablePassage({
-      difficulty: params.difficulty || 'intermediate',
-      length: params.length || 'medium',
-      theme: params.theme || 'general',
-      challengeType: params.challengeType || 'standard',
-      language: params.language || 'english',
+    const supabase = await createClient();
+    const { difficulty = 'beginner', length = 'medium', language = 'english', userId } = params;
+
+    let query = supabase
+      .from('passages')
+      .select('*')
+      .eq('status', 'ready')
+      .eq('difficulty', difficulty)
+      .eq('length', length)
+      .eq('language', language)
+      .order('used_count', { ascending: true })
+      .limit(20);
+
+    const { data: passages, error } = await query;
+
+    console.log('DB Query Result:', {
+      difficulty,
+      length,
+      language,
+      passagesFound: passages?.length || 0,
+      error: error?.message
     });
+
+    if (error || !passages || passages.length === 0) {
+      return null;
+    }
+
+    if (userId) {
+      const { data: history } = await supabase
+        .from('passage_history')
+        .select('passage_id')
+        .eq('user_id', userId);
+
+      const usedIds = new Set(history?.map(h => h.passage_id) || []);
+      const available = passages.filter(p => !usedIds.has(p.id));
+
+      if (available.length > 0) {
+        const random = available[Math.floor(Math.random() * available.length)];
+        await supabase.from('passages').update({ used_count: random.used_count + 1, status: 'in_use' }).eq('id', random.id);
+        return random as Passage;
+      }
+    }
+
+    const random = passages[Math.floor(Math.random() * passages.length)];
+    await supabase.from('passages').update({ used_count: random.used_count + 1, status: 'in_use' }).eq('id', random.id);
+    return random as Passage;
   } catch (error) {
     console.error('Error fetching passage:', error);
     return null;
@@ -56,8 +94,6 @@ export async function storeGeneratedPassage(passage: {
   language: Language;
   difficulty: Difficulty;
   length: Length;
-  theme: Theme;
-  challengeType: ChallengeType;
 }): Promise<string | null> {
   try {
     return await saveGeneratedPassage({

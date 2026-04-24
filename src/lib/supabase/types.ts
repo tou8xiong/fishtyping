@@ -1,7 +1,5 @@
-export type Difficulty = 'beginner' | 'intermediate' | 'advanced' | 'expert';
+export type Difficulty = 'beginner' | 'advanced' | 'expert';
 export type Length = 'short' | 'medium' | 'long';
-export type Theme = 'technology' | 'nature' | 'science' | 'history' | 'general';
-export type ChallengeType = 'standard' | 'punctuation' | 'numbers' | 'speed';
 export type Language = 'english' | 'lao';
 export type PassageStatus = 'generating' | 'ready' | 'in_use' | 'archived';
 export type GeneratedBy = 'manual' | 'ai';
@@ -9,7 +7,6 @@ export type GeneratedBy = 'manual' | 'ai';
 // Word count ranges by difficulty
 export const WORD_COUNT_BY_DIFFICULTY = {
   beginner: { min: 15, max: 30, description: 'Short, builds confidence, simple words' },
-  intermediate: { min: 40, max: 80, description: 'Enough to build rhythm and flow' },
   advanced: { min: 100, max: 150, description: 'Tests sustained focus and stamina' },
   expert: { min: 200, max: 300, description: 'For serious practice only' },
 } as const;
@@ -30,8 +27,6 @@ export interface Passage {
   language: Language;
   difficulty: Difficulty;
   length: Length;
-  theme: Theme;
-  challenge_type: ChallengeType;
   status: PassageStatus;
   generated_by: GeneratedBy;
   ai_model: string | null;
@@ -70,8 +65,6 @@ export interface GenerationJob {
   language: Language;
   difficulty: Difficulty | null;
   length: Length | null;
-  theme: Theme | null;
-  challenge_type: ChallengeType | null;
   attempts: number;
   error_message: string | null;
   created_at: string;

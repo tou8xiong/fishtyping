@@ -16,7 +16,6 @@ interface TypingSettingsProps {
 
 const difficultyOptions: { value: Difficulty; label: string }[] = [
   { value: 'beginner', label: 'Beginner' },
-  { value: 'intermediate', label: 'Intermediate' },
   { value: 'advanced', label: 'Advanced' },
   { value: 'expert', label: 'Expert' },
 ];
@@ -73,7 +72,7 @@ const OptionButton: React.FC<{
 );
 
 export const TypingSettings: React.FC<TypingSettingsProps> = ({
-  difficulty = 'intermediate',
+  difficulty = 'beginner',
   length = 'medium',
   theme = 'general',
   challengeType = 'standard',
