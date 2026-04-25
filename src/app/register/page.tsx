@@ -3,7 +3,11 @@
 import Link from "next/link";
 import { useState } from "react";
 import { LuLock, LuMail, LuUserRound, LuUserRoundPlus } from "react-icons/lu";
-import { signup, signInWithOAuth } from "./actions";
+import { auth } from "@/lib/firebase/config";
+import { createUserWithEmailAndPassword, signInWithPopup, GoogleAuthProvider, GithubAuthProvider, updateProfile } from "firebase/auth";
+import { createUserProfile } from "../login/actions";
+import { useRouter } from "next/navigation";
+import { toast } from "sonner";
 
 function FishMark() {
   return (
@@ -28,6 +32,7 @@ export default function RegisterPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
+  const router = useRouter();
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -36,31 +41,34 @@ export default function RegisterPage() {
     setSuccess("");
 
     const formData = new FormData(e.currentTarget);
+    const username = formData.get("username") as string;
+    const email = formData.get("email") as string;
     const password = formData.get("password") as string;
     const confirmPassword = formData.get("confirmPassword") as string;
 
     if (password !== confirmPassword) {
       setError("Passwords do not match");
+      toast.error("Passwords do not match");
       setLoading(false);
       return;
     }
 
     if (password.length < 6) {
       setError("Password must be at least 6 characters");
+      toast.error("Password must be at least 6 characters");
       setLoading(false);
       return;
     }
 
-    const result = await signup(formData);
-
-    if (result?.error) {
-      setError(result.error);
-      setLoading(false);
-      return;
-    }
-
-    if (result?.success) {
-      setSuccess(result.message || "Account created successfully.");
+    try {
+      const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+      await updateProfile(userCredential.user, { displayName: username });
+      await createUserProfile(userCredential.user.uid, userCredential.user.email, username);
+      toast.success("Account created successfully");
+      router.push("/");
+    } catch (err: any) {
+      setError(err.message || "Failed to create account");
+      toast.error(err.message || "Failed to create account");
       setLoading(false);
     }
   };
@@ -69,7 +77,18 @@ export default function RegisterPage() {
     setLoading(true);
     setError("");
     setSuccess("");
-    await signInWithOAuth(provider);
+
+    try {
+      const authProvider = provider === "google" ? new GoogleAuthProvider() : new GithubAuthProvider();
+      const userCredential = await signInWithPopup(auth, authProvider);
+      await createUserProfile(userCredential.user.uid, userCredential.user.email, userCredential.user.displayName);
+      toast.success("Account created successfully");
+      router.push("/");
+    } catch (err: any) {
+      setError(err.message || "Failed to sign up with OAuth");
+      toast.error(err.message || "Failed to sign up with OAuth");
+      setLoading(false);
+    }
   };
 
   return (

@@ -1,9 +1,13 @@
 "use client";
 
-import { LuActivity, LuBomb, LuGauge, LuHistory, LuRotateCcw, LuSave, LuTarget, LuTrophy, LuUserRound } from "react-icons/lu";
+import { LuActivity, LuBomb, LuGauge, LuHistory, LuLogOut, LuRotateCcw, LuSave, LuTarget, LuTrophy, LuUserRound } from "react-icons/lu";
 import { useAuth } from "@/hooks/useAuth";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
+import { signOut } from "firebase/auth";
+import { auth } from "@/lib/firebase/config";
+import { signOutAction } from "@/app/login/actions";
+import { toast } from "sonner";
 
 interface UserStats {
   totalSessions: number;
@@ -41,11 +45,61 @@ export default function ProfilePage() {
     if (user) {
       setDisplayName(user.display_name || "");
       setUsername(user.username || "");
+
+      // Fetch user stats
+      console.log("Fetching stats for user ID:", user.id);
+      fetch(`/api/user-stats?userId=${user.id}`)
+        .then((res) => res.json())
+        .then((data) => {
+          if (!data.error) {
+            setStats({
+              totalSessions: data.totalSessions || 0,
+              totalWordsTyped: data.totalWordsTyped || 0,
+              averageWpm: data.averageWpm || 0,
+              averageAccuracy: data.averageAccuracy || 0,
+              bestWpm: data.bestWpm || 0,
+              totalTimeMinutes: data.totalTimeMinutes || 0,
+            });
+          }
+        })
+        .catch((err) => console.error("Error fetching stats:", err));
     }
   }, [user]);
 
   const handleSave = async () => {
-    setEditing(false);
+    if (!user) return;
+
+    try {
+      const response = await fetch("/api/update-profile", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          userId: user.id,
+          username,
+          displayName,
+        }),
+      });
+
+      const data = await response.json();
+
+      if (data.error) {
+        toast.error("Failed to update profile");
+      } else {
+        toast.success("Profile updated successfully");
+        setEditing(false);
+        // Refresh the page to get updated user data
+        window.location.reload();
+      }
+    } catch (error) {
+      toast.error("Failed to update profile");
+    }
+  };
+
+  const handleSignOut = async () => {
+    await signOut(auth);
+    await signOutAction();
+    toast.success("Signed out successfully");
+    router.push("/login");
   };
 
   const initials = (user?.display_name || user?.username || user?.email || "U")
@@ -214,6 +268,16 @@ export default function ProfilePage() {
           </div>
 
           <div className="mt-5 h-px w-full bg-border/80" />
+
+          <div className="mt-5">
+            <button
+              onClick={handleSignOut}
+              className="flex items-center gap-2 rounded-md border border-red-500/60 bg-red-500/10 px-4 py-2 text-sm font-black text-red-500 transition-colors hover:bg-red-500/20"
+            >
+              <LuLogOut className="h-4 w-4" />
+              SIGN OUT
+            </button>
+          </div>
         </section>
       </div>
     </section>

@@ -3,6 +3,9 @@
 import Link from "next/link";
 import { useState } from "react";
 import { useAuth } from "@/hooks/useAuth";
+import { auth } from "@/lib/firebase/config";
+import { signOut } from "firebase/auth";
+import { signOutAction } from "@/app/login/actions";
 
 export function Header() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -14,6 +17,11 @@ export function Header() {
   const avatarLabel = (user?.display_name || user?.username || user?.email || "P")
     .charAt(0)
     .toUpperCase();
+
+  const handleSignOut = async () => {
+    await signOut(auth);
+    await signOutAction();
+  };
 
   return (
     <header className="py-4 md:py-4 border-b border-primary/20 backdrop-blur-xl sticky top-0 z-50 bg-gradient-to-b from-black/95 to-black/90">
@@ -44,19 +52,27 @@ export function Header() {
           {loading ? (
             <div className="h-11 w-28 rounded-full border border-border bg-white/[0.03]" />
           ) : user ? (
-            <Link
-              href="/profile"
-              className="inline-flex items-center gap-3 rounded-full border border-primary/35 bg-primary/10 px-3 py-2 text-sm text-foreground transition-all hover:border-primary hover:bg-primary/15"
-            >
-              <div className="flex h-8 w-8 items-center justify-center rounded-full border border-primary/40 bg-primary/15 text-xs font-black text-primary">
-                {avatarLabel}
-              </div>
-              <div className="hidden text-left md:block">
-                <div className="max-w-32 truncate text-sm font-semibold text-foreground">
-                  {profileName}
+            <div className="relative group">
+              <Link
+                href="/profile"
+                className="inline-flex items-center gap-3 rounded-full border border-primary/35 bg-primary/10 px-3 py-2 text-sm text-foreground transition-all hover:border-primary hover:bg-primary/15"
+              >
+                <div className="flex h-8 w-8 items-center justify-center rounded-full border border-primary/40 bg-primary/15 text-xs font-black text-primary">
+                  {avatarLabel}
                 </div>
-              </div>
-            </Link>
+                <div className="hidden text-left md:block">
+                  <div className="max-w-32 truncate text-sm font-semibold text-foreground">
+                    {profileName}
+                  </div>
+                </div>
+              </Link>
+              <button
+                onClick={handleSignOut}
+                className="absolute right-0 top-full mt-2 hidden group-hover:block rounded-sm border border-border bg-background px-4 py-2 text-xs text-foreground/80 hover:text-foreground whitespace-nowrap"
+              >
+                Sign Out
+              </button>
+            </div>
           ) : (
             <Link href="/login"
               className="inline-flex items-center justify-center
@@ -73,9 +89,14 @@ export function Header() {
           <Link href="/leaderboard" className="block py-2 text-foreground/80 hover:text-primary transition-colors" onClick={() => setMobileMenuOpen(false)}>LEADERBOARD</Link>
           <Link href="/settings" className="block py-2 text-foreground/80 hover:text-primary transition-colors" onClick={() => setMobileMenuOpen(false)}>SETTINGS</Link>
           {user ? (
-            <Link href="/profile" className="block py-2 text-foreground/80 hover:text-primary transition-colors" onClick={() => setMobileMenuOpen(false)}>
-              {profileName}
-            </Link>
+            <>
+              <Link href="/profile" className="block py-2 text-foreground/80 hover:text-primary transition-colors" onClick={() => setMobileMenuOpen(false)}>
+                {profileName}
+              </Link>
+              <button onClick={handleSignOut} className="block py-2 text-foreground/80 hover:text-primary transition-colors text-left w-full">
+                Sign Out
+              </button>
+            </>
           ) : (
             <Link href="/login" className="block py-2 text-foreground/80 hover:text-primary transition-colors" onClick={() => setMobileMenuOpen(false)}>Log In</Link>
           )}
