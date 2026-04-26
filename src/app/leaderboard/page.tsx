@@ -7,6 +7,7 @@ interface LeaderboardEntry {
   userId: string;
   username: string;
   displayName: string;
+  avatarUrl?: string;
   wpm: number;
   accuracy: number;
   date: string;
@@ -53,14 +54,15 @@ export default function LeaderboardPage() {
 
   // Placeholder data for empty leaderboard
   const placeholderTopThree = [
-    { rank: 2, displayName: "???", wpm: 0, accuracy: 0 },
-    { rank: 1, displayName: "???", wpm: 0, accuracy: 0 },
-    { rank: 3, displayName: "???", wpm: 0, accuracy: 0 },
+    { rank: 2, displayName: "???", avatarUrl: undefined, wpm: 0, accuracy: 0 },
+    { rank: 1, displayName: "???", avatarUrl: undefined, wpm: 0, accuracy: 0 },
+    { rank: 3, displayName: "???", avatarUrl: undefined, wpm: 0, accuracy: 0 },
   ];
 
   const placeholderList = Array.from({ length: 5 }, (_, i) => ({
     rank: i + 4,
     displayName: "???",
+    avatarUrl: undefined,
     wpm: 0,
     accuracy: 0,
     date: new Date().toISOString(),
@@ -157,8 +159,12 @@ export default function LeaderboardPage() {
             <div className="absolute inset-0 rounded-xl bg-[radial-gradient(circle_at_top,rgba(248,250,252,0.04),transparent_60%)] opacity-70" />
             <div className="relative flex items-start justify-between">
               <div className="flex items-center gap-4">
-                <div className="flex h-16 w-16 items-center justify-center rounded-2xl border text-base font-black border-primary/40 bg-primary/10 text-primary">
-                  {displayTopThree[0] ? getInitials(displayTopThree[0].displayName) : "?"}
+                <div className="flex h-16 w-16 items-center justify-center rounded-2xl border text-base font-black border-primary/40 bg-primary/10 text-primary overflow-hidden">
+                  {displayTopThree[0]?.avatarUrl ? (
+                    <img src={displayTopThree[0].avatarUrl} alt="Avatar" className="h-full w-full object-cover" />
+                  ) : (
+                    displayTopThree[0] ? getInitials(displayTopThree[0].displayName) : "?"
+                  )}
                 </div>
                 <div className="space-y-1">
                   <div className="inline-flex rounded-full border border-secondary/40 bg-secondary/10 px-3 py-1 text-xs font-black text-secondary">
@@ -197,8 +203,12 @@ export default function LeaderboardPage() {
             <div className="absolute inset-0 rounded-xl bg-[radial-gradient(circle_at_top,rgba(248,250,252,0.04),transparent_60%)] opacity-70" />
             <div className="relative flex items-start justify-between">
               <div className="flex items-center gap-4">
-                <div className="flex h-16 w-16 items-center justify-center rounded-2xl border text-base font-black border-secondary bg-secondary/10 text-secondary shadow-[0_0_18px_rgba(255,195,56,0.2)]">
-                  {displayTopThree[1] ? getInitials(displayTopThree[1].displayName) : "?"}
+                <div className="flex h-16 w-16 items-center justify-center rounded-2xl border text-base font-black border-secondary bg-secondary/10 text-secondary shadow-[0_0_18px_rgba(255,195,56,0.2)] overflow-hidden">
+                  {displayTopThree[1]?.avatarUrl ? (
+                    <img src={displayTopThree[1].avatarUrl} alt="Avatar" className="h-full w-full object-cover" />
+                  ) : (
+                    displayTopThree[1] ? getInitials(displayTopThree[1].displayName) : "?"
+                  )}
                 </div>
                 <div className="space-y-1">
                   <div className="inline-flex rounded-full border border-secondary/40 bg-secondary/10 px-3 py-1 text-xs font-black text-secondary">
@@ -237,8 +247,12 @@ export default function LeaderboardPage() {
             <div className="absolute inset-0 rounded-xl bg-[radial-gradient(circle_at_top,rgba(248,250,252,0.04),transparent_60%)] opacity-70" />
             <div className="relative flex items-start justify-between">
               <div className="flex items-center gap-4">
-                <div className="flex h-16 w-16 items-center justify-center rounded-2xl border text-base font-black border-primary/40 bg-primary/10 text-primary">
-                  {displayTopThree[2] ? getInitials(displayTopThree[2].displayName) : "?"}
+                <div className="flex h-16 w-16 items-center justify-center rounded-2xl border text-base font-black border-primary/40 bg-primary/10 text-primary overflow-hidden">
+                  {displayTopThree[2]?.avatarUrl ? (
+                    <img src={displayTopThree[2].avatarUrl} alt="Avatar" className="h-full w-full object-cover" />
+                  ) : (
+                    displayTopThree[2] ? getInitials(displayTopThree[2].displayName) : "?"
+                  )}
                 </div>
                 <div className="space-y-1">
                   <div className="inline-flex rounded-full border border-secondary/40 bg-secondary/10 px-3 py-1 text-xs font-black text-secondary">
@@ -304,8 +318,12 @@ export default function LeaderboardPage() {
                       </td>
                       <td className="border-t border-white/5 px-6 py-5 md:px-7">
                         <div className="flex items-center gap-4">
-                          <div className="flex h-11 w-11 items-center justify-center rounded-full border border-primary/25 bg-primary/10 text-sm font-black text-primary">
-                            {player.displayName === "???" ? "?" : getInitials(player.displayName)}
+                          <div className="flex h-11 w-11 items-center justify-center rounded-full border border-primary/25 bg-primary/10 text-sm font-black text-primary overflow-hidden">
+                            {player.avatarUrl ? (
+                              <img src={player.avatarUrl} alt="Avatar" className="h-full w-full object-cover" />
+                            ) : (
+                              player.displayName === "???" ? "?" : getInitials(player.displayName)
+                            )}
                           </div>
                           <span className="text-base font-bold text-foreground">{player.displayName}</span>
                         </div>

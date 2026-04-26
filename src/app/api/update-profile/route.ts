@@ -3,7 +3,7 @@ import { NextResponse } from "next/server";
 
 export async function PUT(request: Request) {
   try {
-    const { userId, username, displayName } = await request.json();
+    const { userId, username, displayName, avatarUrl } = await request.json();
 
     if (!userId) {
       return NextResponse.json({ error: "User ID required" }, { status: 400 });
@@ -16,6 +16,7 @@ export async function PUT(request: Request) {
       .update({
         username,
         display_name: displayName,
+        avatar_url: avatarUrl,
         updated_at: new Date().toISOString(),
       })
       .eq("id", userId)

@@ -1,9 +1,9 @@
 "use client";
 
-import { LuActivity, LuBomb, LuGauge, LuHistory, LuLogOut, LuRotateCcw, LuSave, LuTarget, LuTrophy, LuUserRound } from "react-icons/lu";
+import { LuActivity, LuBomb, LuGauge, LuHistory, LuLogOut, LuRotateCcw, LuSave, LuTarget, LuTrophy, LuUpload, LuUserRound } from "react-icons/lu";
 import { useAuth } from "@/hooks/useAuth";
 import { useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { signOut } from "firebase/auth";
 import { auth } from "@/lib/firebase/config";
 import { signOutAction } from "@/app/login/actions";
@@ -34,6 +34,12 @@ export default function ProfilePage() {
   const [editing, setEditing] = useState(false);
   const [displayName, setDisplayName] = useState("");
   const [username, setUsername] = useState("");
+  const [selectedAvatar, setSelectedAvatar] = useState("");
+  const [showAvatarPicker, setShowAvatarPicker] = useState(false);
+  const [uploadedImage, setUploadedImage] = useState<string | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const avatars = Array.from({ length: 9 }, (_, i) => `/avaatart-icon/av${i + 1}.png`);
 
   useEffect(() => {
     if (!loading && !user) {
@@ -45,6 +51,7 @@ export default function ProfilePage() {
     if (user) {
       setDisplayName(user.display_name || "");
       setUsername(user.username || "");
+      setSelectedAvatar(user.avatar_url || "");
 
       // Fetch user stats
       console.log("Fetching stats for user ID:", user.id);
@@ -77,6 +84,7 @@ export default function ProfilePage() {
           userId: user.id,
           username,
           displayName,
+          avatarUrl: selectedAvatar,
         }),
       });
 
@@ -87,6 +95,7 @@ export default function ProfilePage() {
       } else {
         toast.success("Profile updated successfully");
         setEditing(false);
+        setShowAvatarPicker(false);
         // Refresh the page to get updated user data
         window.location.reload();
       }
@@ -100,6 +109,32 @@ export default function ProfilePage() {
     await signOutAction();
     toast.success("Signed out successfully");
     router.push("/login");
+  };
+
+  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    // Check file size (max 5MB)
+    if (file.size > 5 * 1024 * 1024) {
+      toast.error("Image size must be less than 5MB");
+      return;
+    }
+
+    // Check file type
+    if (!file.type.startsWith("image/")) {
+      toast.error("Please upload an image file");
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onloadend = () => {
+      const base64String = reader.result as string;
+      setUploadedImage(base64String);
+      setSelectedAvatar(base64String);
+      toast.success("Image uploaded successfully");
+    };
+    reader.readAsDataURL(file);
   };
 
   const initials = (user?.display_name || user?.username || user?.email || "U")
@@ -139,14 +174,84 @@ export default function ProfilePage() {
 
           <div className="mt-5 h-px w-full bg-border/80" />
 
-          <div className="mt-5 flex flex-col gap-5 md:flex-row md:items-start">
-            <div className="flex h-28 w-28 items-center justify-center rounded-xl border border-primary/60 bg-primary/10 shadow-[0_0_20px_rgba(11,175,231,0.18)]">
-              <div className="flex h-24 w-24 items-center justify-center rounded-lg bg-[radial-gradient(circle_at_35%_30%,rgba(11,175,231,0.45),rgba(11,175,231,0.1)_45%,rgba(18,18,18,0.9)_85%)] text-4xl font-black text-foreground">
-                {initials}
+          <div className="mt-5 flex flex-col gap-5">
+            {/* Avatar Section - Always Visible */}
+            <div className="glass rounded-lg border border-primary/40 p-5">
+              <h3 className="text-sm font-black uppercase tracking-wider text-foreground/70 mb-4">Profile Avatar</h3>
+
+              <div className="flex flex-col md:flex-row gap-5 items-start">
+                {/* Current Avatar Display */}
+                <div className="flex flex-col items-center gap-3">
+                  <div className="flex h-32 w-32 items-center justify-center rounded-xl border-2 border-primary/60 bg-primary/10 shadow-[0_0_20px_rgba(11,175,231,0.18)] overflow-hidden">
+                    {selectedAvatar || user?.avatar_url ? (
+                      <img
+                        src={selectedAvatar || user?.avatar_url || ""}
+                        alt="Avatar"
+                        className="h-full w-full object-cover"
+                      />
+                    ) : (
+                      <div className="flex h-full w-full items-center justify-center bg-[radial-gradient(circle_at_35%_30%,rgba(11,175,231,0.45),rgba(11,175,231,0.1)_45%,rgba(18,18,18,0.9)_85%)] text-5xl font-black text-foreground">
+                        {initials}
+                      </div>
+                    )}
+                  </div>
+
+                  {editing && (
+                    <div className="flex gap-2">
+                      <button
+                        onClick={() => fileInputRef.current?.click()}
+                        className="flex items-center gap-2 rounded-md border border-primary/60 bg-primary/10 px-4 py-2 text-xs font-black uppercase tracking-wider text-primary transition-colors hover:bg-primary/20"
+                      >
+                        <LuUpload className="h-4 w-4" />
+                        Upload
+                      </button>
+                      <button
+                        onClick={() => setShowAvatarPicker(!showAvatarPicker)}
+                        className="flex items-center gap-2 rounded-md border border-border bg-white/[0.03] px-4 py-2 text-xs font-black uppercase tracking-wider text-foreground/80 transition-colors hover:border-primary/40 hover:text-foreground"
+                      >
+                        {showAvatarPicker ? "Hide" : "Choose"}
+                      </button>
+                    </div>
+                  )}
+                  <input
+                    ref={fileInputRef}
+                    type="file"
+                    accept="image/*"
+                    onChange={handleImageUpload}
+                    className="hidden"
+                  />
+                </div>
+
+                {/* Avatar Picker Grid */}
+                {showAvatarPicker && editing && (
+                  <div className="flex-1">
+                    <p className="text-xs font-black uppercase tracking-wider text-foreground/60 mb-3">Select from presets</p>
+                    <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 gap-3">
+                      {avatars.map((avatar) => (
+                        <button
+                          key={avatar}
+                          onClick={() => {
+                            setSelectedAvatar(avatar);
+                            setUploadedImage(null);
+                          }}
+                          className={`relative h-20 w-20 rounded-lg border-2 overflow-hidden transition-all hover:scale-105 ${
+                            selectedAvatar === avatar
+                              ? "border-primary shadow-[0_0_20px_rgba(11,175,231,0.4)]"
+                              : "border-border/60 hover:border-primary/60"
+                          }`}
+                        >
+                          <img src={avatar} alt="Avatar option" className="h-full w-full object-cover" />
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                )}
               </div>
             </div>
 
-            <div className="flex-1 space-y-4">
+            {/* Profile Info Section */}
+            <div className="flex flex-col md:flex-row gap-5">
+              <div className="flex-1 space-y-4">
               <div className="space-y-1.5">
                 <label className="block text-[11px] font-black uppercase tracking-[0.24em] text-foreground/55">
                   Callsign
@@ -176,13 +281,26 @@ export default function ProfilePage() {
 
               <div className="flex gap-2">
                 {editing ? (
-                  <button
-                    onClick={handleSave}
-                    className="flex items-center gap-2 rounded-md border border-primary/60 bg-primary/10 px-4 py-2 text-sm font-black text-primary transition-colors hover:bg-primary/20"
-                  >
-                    <LuSave className="h-4 w-4" />
-                    SAVE
-                  </button>
+                  <>
+                    <button
+                      onClick={handleSave}
+                      className="flex items-center gap-2 rounded-md border border-primary/60 bg-primary/10 px-4 py-2 text-sm font-black text-primary transition-colors hover:bg-primary/20"
+                    >
+                      <LuSave className="h-4 w-4" />
+                      SAVE
+                    </button>
+                    <button
+                      onClick={() => {
+                        setEditing(false);
+                        setShowAvatarPicker(false);
+                        setSelectedAvatar(user?.avatar_url || "");
+                        setUploadedImage(null);
+                      }}
+                      className="flex items-center gap-2 rounded-md border border-border bg-white/[0.03] px-4 py-2 text-sm font-black text-foreground/80 transition-colors hover:border-red-500/40 hover:text-red-500"
+                    >
+                      CANCEL
+                    </button>
+                  </>
                 ) : (
                   <button
                     onClick={() => setEditing(true)}
@@ -193,6 +311,7 @@ export default function ProfilePage() {
                   </button>
                 )}
               </div>
+            </div>
             </div>
           </div>
         </section>
