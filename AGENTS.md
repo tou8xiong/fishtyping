@@ -186,9 +186,15 @@ src/
 ├── app/                    # Next.js App Router pages
 │   ├── api/               # API routes
 │   │   ├── generate-passage/  # Passage generation endpoint
+│   │   ├── leaderboard/   # Leaderboard data endpoint
+│   │   ├── update-profile/ # User profile update endpoint
+│   │   ├── user-stats/    # User statistics endpoint
 │   │   └── worker/        # Background worker endpoints
-│   ├── admin/             # Admin pages (passage management)
-│   ├── auth/              # Auth callback
+│   ├── admin/             # Admin panel (restricted access)
+│   │   ├── page.tsx       # Admin dashboard with passage list
+│   │   └── passages/      # Passage management
+│   │       ├── [id]/      # Edit passage page (dynamic route)
+│   │       └── page.tsx   # Passage pool management
 │   ├── login/             # Login page
 │   ├── register/          # Registration page
 │   ├── profile/           # User profile
@@ -196,8 +202,11 @@ src/
 │   ├── leaderboard/       # Leaderboard page
 │   └── typing/            # Typing test page
 ├── components/            # React components
-│   ├── Header.tsx         # Navigation header
-│   └── PracticeSection.tsx
+│   ├── Header.tsx         # Navigation header (includes admin icon)
+│   ├── PracticeSection.tsx
+│   └── ToastProvider.tsx
+├── contexts/              # React contexts
+│   └── SettingsContext.tsx
 ├── features/              # Feature modules
 │   └── typing-test/       # Typing test feature
 │       ├── components/    # TypingTest, TypingSettings
@@ -206,13 +215,15 @@ src/
 ├── hooks/                 # Custom React hooks
 │   └── useAuth.ts
 ├── lib/                   # Utility functions
+│   ├── firebase/          # Firebase configuration
+│   │   └── config.ts      # Firebase Auth setup
 │   └── supabase/          # Supabase client and DB functions
 │       ├── client.ts      # Client-side Supabase
 │       ├── server.ts      # Server-side Supabase
 │       ├── db.ts          # Database queries
 │       ├── server-db.ts   # Server DB queries
 │       └── types.ts       # TypeScript types
-└── middleware.ts          # Auth middleware
+└── middleware.ts          # Auth middleware (if exists)
 ```
 
 ### API Routes Pattern
@@ -228,6 +239,9 @@ src/
   - Falls back to Gemini AI generation if not found
   - Saves generated passages to DB for reuse
 - `/api/worker/generate-pool` - Background worker for pre-generating passages
+- `/api/leaderboard` - Fetches leaderboard data with filtering
+- `/api/update-profile` - Updates user profile information
+- `/api/user-stats` - Retrieves user typing statistics
 
 ### Component Patterns
 
@@ -359,14 +373,34 @@ return NextResponse.json(
 
 ### Database Schema
 
-- This project uses Supabase for authentication and database
+- This project uses Firebase Auth for authentication and Supabase for database
 - Key tables:
-  - `users` - User profiles with preferred language
+  - `users` - User profiles with preferred language, avatar, display name
   - `passages` - Generated typing passages with metadata
   - `passage_history` - User typing test results
   - `generation_jobs` - Queue for AI passage generation
 - Always use parameterized queries
 - Never expose raw SQL to the client
+
+### Authentication System
+
+- Uses Firebase Authentication for user management
+- Supports email/password, Google, and GitHub sign-in
+- User profiles stored in Supabase `users` table
+- Auth state managed via `useAuth` hook
+- Admin access restricted to specific email (touxhk@gmail.com) or user ID (8OZdxsSF8gY5ysBogP5yqkTMaZI3)
+
+### Admin Panel
+
+- Located at `/admin` - restricted to admin users only
+- Features:
+  - View all passages with filters (language, difficulty)
+  - Click any row to edit passage at `/admin/passages/[id]`
+  - Create new passages via modal
+  - Stats dashboard showing passage counts
+  - Full CRUD operations on passages
+- Admin icon appears in header only for authorized users
+- Edit page provides full-size form with large textarea for better content management
 
 ### Passage Generation System
 
@@ -394,10 +428,12 @@ return NextResponse.json(
 
 - Never commit secrets, API keys, or .env files
 - Validate all user inputs
-- Use proper authentication checks via Supabase
+- Use proper authentication checks via Firebase Auth and Supabase
 - Sanitize data before displaying
+- Admin routes protected with email/ID verification
 - Environment variables:
   - `GEMINI_API_KEY` - Required for AI passage generation
+  - Firebase credentials (NEXT_PUBLIC_FIREBASE_API_KEY, etc.)
   - Supabase credentials (NEXT_PUBLIC_SUPABASE_URL, NEXT_PUBLIC_SUPABASE_ANON_KEY)
 
 ### Performance
@@ -407,6 +443,7 @@ return NextResponse.json(
 - Lazy load heavy components
 - Cache passages in database to avoid repeated AI calls
 - Background workers pre-generate passages to reduce wait time
+- Admin panel uses filters to reduce data load
 
 ---
 
@@ -521,11 +558,12 @@ fix: resolve task creation error
 - Build errors: Check TypeScript types
 - Runtime errors: Check console logs
 - API errors: Check route handlers and Gemini API key
-- Auth errors: Check Supabase client configuration
+- Auth errors: Check Firebase Auth configuration and Supabase client
 - Styling issues: Check Tailwind classes
 - Passage generation: Check Gemini API quota and language support
 - "No passage found in DB, using fallback": Normal on first request, passages are generated and cached
+- Admin access denied: Verify user email matches touxhk@gmail.com or ID matches 8OZdxsSF8gY5ysBogP5yqkTMaZI3
 
 ---
 
-Last updated: 2026-04-23
+Last updated: 2026-04-27

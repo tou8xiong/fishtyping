@@ -1,6 +1,8 @@
 import type { Metadata } from "next";
 import { Crimson_Text, EB_Garamond, JetBrains_Mono } from "next/font/google";
 import { Header } from "@/components/Header";
+import { ToastProvider } from "@/components/ToastProvider";
+import { SettingsProvider } from "@/contexts/SettingsContext";
 import "./globals.css";
 
 const crimsonText = Crimson_Text({
@@ -36,26 +38,29 @@ export default function RootLayout({
   return (
     <html lang="en" className={`${crimsonText.variable} ${ebGaramond.variable} ${jetbrainsMono.variable}`}>
       <body className="antialiased">
-        <div className="flex flex-col min-h-screen">
-          <Header />
+        <SettingsProvider>
+          <ToastProvider />
+          <div className="flex flex-col min-h-screen">
+            <Header />
 
-          <main className="flex-1 flex flex-col">
-            {children}
-          </main>
+            <main className="flex-1 flex flex-col">
+              {children}
+            </main>
 
-          <footer className="py-12 px-8 border-t border-white/5 text-center">
-            <div className="max-w-7xl mx-auto flex flex-col md:flex-row justify-between items-center gap-6">
-              <p className="text-sm text-foreground/40 font-medium">
-                &copy; {new Date().getFullYear()} FishTyping. Precision matters.
-              </p>
-              <div className="flex gap-8 text-xs font-bold text-foreground/20 tracking-widest uppercase">
-                <a href="#" className="hover:text-foreground/60 transition-colors">Twitter</a>
-                <a href="#" className="hover:text-foreground/60 transition-colors">Discord</a>
-                <a href="#" className="hover:text-foreground/60 transition-colors">Github</a>
+            <footer className="py-12 px-8 border-t border-white/5 text-center">
+              <div className="max-w-7xl mx-auto flex flex-col md:flex-row justify-between items-center gap-6">
+                <p className="text-sm text-foreground/40 font-medium">
+                  &copy; {new Date().getFullYear()} FishTyping. Precision matters.
+                </p>
+                <div className="flex gap-8 text-xs font-bold text-foreground/20 tracking-widest uppercase">
+                  <a href="#" className="hover:text-foreground/60 transition-colors">Twitter</a>
+                  <a href="#" className="hover:text-foreground/60 transition-colors">Discord</a>
+                  <a href="#" className="hover:text-foreground/60 transition-colors">Github</a>
+                </div>
               </div>
-            </div>
-          </footer>
-        </div>
+            </footer>
+          </div>
+        </SettingsProvider>
       </body>
     </html>
   );

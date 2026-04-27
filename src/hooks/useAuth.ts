@@ -1,7 +1,9 @@
 "use client";
 
-import { createClient } from "@/lib/supabase/client";
+import { auth } from "@/lib/firebase/config";
+import { onAuthStateChanged, User as FirebaseUser } from "firebase/auth";
 import { useEffect, useState } from "react";
+import { createClient } from "@/lib/supabase/client";
 import type { User } from "@/lib/supabase/types";
 
 interface AuthUser extends User {
@@ -15,6 +17,7 @@ interface AuthState {
 }
 
 let cachedProfile: User | null = null;
+let lastUserId: string | null = null;
 
 export function useAuth() {
   const [authState, setAuthState] = useState<AuthState>({
@@ -26,29 +29,32 @@ export function useAuth() {
     let mounted = true;
     const supabase = createClient();
 
-    console.log('useAuth: setting up auth listener');
+    console.log('useAuth: setting up Firebase auth listener');
 
-    const {
-      data: { subscription },
-    } = supabase.auth.onAuthStateChange(async (event, session) => {
-      console.log('useAuth: onAuthStateChange fired', { event, hasSession: !!session, hasUser: !!session?.user });
+    const unsubscribe = onAuthStateChanged(auth, async (firebaseUser: FirebaseUser | null) => {
+      console.log('useAuth: Firebase auth state changed', { hasUser: !!firebaseUser });
 
       if (!mounted) {
         console.log('useAuth: component unmounted, skipping');
         return;
       }
 
-      if (session?.user) {
-        console.log('useAuth: fetching profile for user', session.user.id);
+      if (firebaseUser) {
+        console.log('useAuth: fetching profile for user', firebaseUser.uid);
+
+        const shouldRefresh = !cachedProfile ||
+                             cachedProfile.id !== firebaseUser.uid ||
+                             lastUserId !== firebaseUser.uid;
 
         let profile = cachedProfile;
 
-        if (!profile || profile.id !== session.user.id) {
+        if (shouldRefresh) {
+          console.log('useAuth: refreshing profile from database');
           try {
             const { data: fetchedProfile, error: profileError } = await supabase
               .from("users")
               .select("*")
-              .eq("id", session.user.id)
+              .eq("id", firebaseUser.uid)
               .maybeSingle();
 
             console.log('useAuth: profile fetch result', {
@@ -62,6 +68,7 @@ export function useAuth() {
             } else if (fetchedProfile) {
               profile = fetchedProfile as User;
               cachedProfile = profile;
+              lastUserId = firebaseUser.uid;
             }
           } catch (fetchError: any) {
             console.error('useAuth: profile fetch failed', fetchError);
@@ -72,13 +79,13 @@ export function useAuth() {
 
         const combinedUser: AuthUser = {
           ...(profile as User || {}),
-          id: session.user.id,
-          email: session.user.email || undefined,
-          username: profile?.username || session.user.user_metadata?.username || session.user.email?.split("@")[0] || null,
-          display_name: profile?.display_name || session.user.user_metadata?.full_name || session.user.user_metadata?.username || session.user.email?.split("@")[0] || null,
+          id: firebaseUser.uid,
+          email: firebaseUser.email || undefined,
+          username: profile?.username || firebaseUser.displayName || firebaseUser.email?.split("@")[0] || null,
+          display_name: profile?.display_name || firebaseUser.displayName || firebaseUser.email?.split("@")[0] || null,
         };
 
-        console.log('useAuth: onAuthStateChange setting user', {
+        console.log('useAuth: setting user', {
           username: combinedUser.username,
           display_name: combinedUser.display_name,
           fullUser: combinedUser
@@ -88,34 +95,17 @@ export function useAuth() {
           user: combinedUser,
           loading: false,
         });
-
-        console.log('useAuth: state updated');
       } else {
-        console.log('useAuth: onAuthStateChange clearing user (no session)');
-        setAuthState({ user: null, loading: false });
-      }
-    });
-
-    // Trigger initial auth check
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      if (!mounted) return;
-
-      console.log('useAuth: initial session check', { hasSession: !!session });
-
-      if (!session) {
-        setAuthState({ user: null, loading: false });
-      }
-      // If session exists, onAuthStateChange will handle it
-    }).catch(err => {
-      console.error('useAuth: getSession error', err);
-      if (mounted) {
+        console.log('useAuth: clearing user (no Firebase session)');
+        cachedProfile = null;
+        lastUserId = null;
         setAuthState({ user: null, loading: false });
       }
     });
 
     return () => {
       mounted = false;
-      subscription.unsubscribe();
+      unsubscribe();
     };
   }, []);
 

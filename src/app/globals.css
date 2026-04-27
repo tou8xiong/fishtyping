@@ -51,6 +51,45 @@ body {
   overflow-x: hidden;
 }
 
+/* Font Family Settings */
+[data-font="jetbrains"] body {
+  font-family: var(--font-mono);
+}
+
+[data-font="crimson"] body {
+  font-family: var(--font-sans);
+}
+
+[data-font="garamond"] body {
+  font-family: var(--font-serif);
+}
+
+/* Font Size Settings */
+[data-font-size="small"] {
+  font-size: 14px;
+}
+
+[data-font-size="medium"] {
+  font-size: 16px;
+}
+
+[data-font-size="large"] {
+  font-size: 18px;
+}
+
+/* Light Theme */
+.light {
+  --background: #ffffff;
+  --foreground: #0f172a;
+  --card: rgba(255, 255, 255, 0.8);
+  --border: rgba(203, 213, 225, 0.5);
+}
+
+.light .glass {
+  background: rgba(255, 255, 255, 0.7);
+  border: 1px solid rgba(203, 213, 225, 0.5);
+}
+
 /* Glassmorphism */
 .glass {
   background: var(--card);

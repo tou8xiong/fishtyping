@@ -8,32 +8,6 @@ import { WORD_COUNT_BY_DIFFICULTY } from "@/lib/supabase/types";
 export type { Difficulty, Length, Language, Passage };
 export { WORD_COUNT_BY_DIFFICULTY };
 
-// Additional types for typing settings
-export type Theme = 'general' | 'technology' | 'nature' | 'science' | 'history';
-export type ChallengeType = 'standard' | 'punctuation' | 'numbers' | 'speed';
-
-interface GeneratePassageParams {
-  difficulty?: Difficulty;
-  length?: Length;
-  language?: Language;
-}
-
-export async function generatePassageWithGemini(params: GeneratePassageParams): Promise<string> {
-  // This function is deprecated - passages should come from the API
-  // Fallback to simple passage if called
-  const { difficulty = 'beginner' } = params;
-
-  const fallbackPassages: Record<Difficulty, string> = {
-    beginner: 'The cat sat on the mat. It was a sunny day. Birds sang in the trees.',
-    advanced: 'Technology has revolutionized the way we communicate and interact with each other. From smartphones to social media platforms, digital innovation continues to shape our daily lives in unprecedented ways. The future promises even more exciting developments.',
-    expert: 'Artificial intelligence and machine learning algorithms have become increasingly sophisticated, enabling computers to perform complex tasks that were once thought to be exclusively within the domain of human intelligence. These technological advancements are transforming industries ranging from healthcare to finance, creating new opportunities while also raising important ethical questions about privacy, automation, and the future of work in an increasingly digital world.'
-  };
-
-  return fallbackPassages[difficulty];
-}
-
-const usedPassages = new Set<string>();
-
 export async function fetchPassageFromDB(params: {
   difficulty?: Difficulty;
   length?: Length;
