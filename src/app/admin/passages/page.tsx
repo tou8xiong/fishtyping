@@ -207,7 +207,7 @@ export default function AdminPassagesPage() {
           <div>
             <h3 className="font-bold mb-2">Vercel Cron:</h3>
             <code className="block bg-black/40 p-3 rounded whitespace-pre">
-{`{
+              {`{
   "crons": [{
     "path": "/api/worker/generate-pool",
     "schedule": "0 * * * *"

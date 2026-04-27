@@ -6,6 +6,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { auth } from "@/lib/firebase/config";
 import { signOut } from "firebase/auth";
 import { signOutAction } from "@/app/login/actions";
+import { MdAdminPanelSettings } from "react-icons/md";
 
 export function Header() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -17,6 +18,8 @@ export function Header() {
   const avatarLabel = (user?.display_name || user?.username || user?.email || "P")
     .charAt(0)
     .toUpperCase();
+
+  const isAdmin = user && (user.email === "touxhk@gmail.com" || user.id === "8OZdxsSF8gY5ysBogP5yqkTMaZI3");
 
   const handleSignOut = async () => {
     await signOut(auth);
@@ -49,6 +52,15 @@ export function Header() {
         </nav>
 
         <div className="flex items-center gap-3 md:gap-4">
+          {isAdmin && (
+            <Link
+              href="/admin"
+              className="flex h-10 w-10 items-center justify-center rounded-full border border-primary/40 bg-primary/10 text-primary transition-all hover:border-primary hover:bg-primary/20"
+              title="Admin Panel"
+            >
+              <MdAdminPanelSettings className="h-5 w-5" />
+            </Link>
+          )}
           {loading ? (
             <div className="h-11 w-28 rounded-full border border-border bg-white/[0.03]" />
           ) : user ? (

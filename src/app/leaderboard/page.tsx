@@ -140,7 +140,7 @@ export default function LeaderboardPage() {
                     onClick={() => setActiveFilter(filter)}
                     className={`rounded-md border px-5 py-2.5 text-[11px] font-black uppercase tracking-[0.25em] transition-all ${active
                       ? "border-primary bg-primary/15 text-primary shadow-[0_0_22px_rgba(11,175,231,0.22)]"
-                      : "border-border bg-white/[0.03] text-foreground/55 hover:border-primary/40 hover:text-foreground"
+                      : "border-border bg-white/3 text-foreground/55 hover:border-primary/40 hover:text-foreground"
                       }`}
                   >
                     {filter}
@@ -290,7 +290,7 @@ export default function LeaderboardPage() {
             <div className="overflow-x-auto">
               <table className="min-w-full border-separate border-spacing-0">
                 <thead>
-                  <tr className="border-b border-white/5 bg-white/[0.015]">
+                  <tr className="border-b border-white/5 bg-white/1.5">
                     <th className="px-6 py-5 text-left text-[10px] font-black uppercase tracking-[0.3em] text-foreground/35 md:px-7">
                       Rank
                     </th>
@@ -312,7 +312,7 @@ export default function LeaderboardPage() {
                   {displayList.map((player) => (
                     <tr key={player.rank} className="leaderboard-row">
                       <td className="border-t border-white/5 px-6 py-5 md:px-7">
-                        <span className="inline-flex min-w-12 justify-center rounded-full border border-white/8 bg-white/[0.02] px-3 py-1 text-sm font-medium text-foreground/75">
+                        <span className="inline-flex min-w-12 justify-center rounded-full border border-white/8 bg-white/2 px-3 py-1 text-sm font-medium text-foreground/75">
                           {String(player.rank).padStart(2, "0")}
                         </span>
                       </td>
