@@ -17,20 +17,11 @@ export async function fetchPassage(params: {
       .select('*')
       .eq('status', 'ready')
       .eq('difficulty', difficulty)
-      .eq('length', length)
       .eq('language', language)
       .order('used_count', { ascending: true })
       .limit(20);
 
     const { data: passages, error } = await query;
-
-    console.log('DB Query Result:', {
-      difficulty,
-      length,
-      language,
-      passagesFound: passages?.length || 0,
-      error: error?.message
-    });
 
     if (error || !passages || passages.length === 0) {
       return null;
@@ -47,13 +38,13 @@ export async function fetchPassage(params: {
 
       if (available.length > 0) {
         const random = available[Math.floor(Math.random() * available.length)];
-        await supabase.from('passages').update({ used_count: random.used_count + 1, status: 'in_use' }).eq('id', random.id);
+        await supabase.from('passages').update({ used_count: random.used_count + 1 }).eq('id', random.id);
         return random as Passage;
       }
     }
 
     const random = passages[Math.floor(Math.random() * passages.length)];
-    await supabase.from('passages').update({ used_count: random.used_count + 1, status: 'in_use' }).eq('id', random.id);
+    await supabase.from('passages').update({ used_count: random.used_count + 1 }).eq('id', random.id);
     return random as Passage;
   } catch (error) {
     console.error('Error fetching passage:', error);

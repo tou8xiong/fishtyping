@@ -8,6 +8,10 @@ import { WORD_COUNT_BY_DIFFICULTY } from "@/lib/supabase/types";
 export type { Difficulty, Length, Language, Passage };
 export { WORD_COUNT_BY_DIFFICULTY };
 
+// Additional types for typing settings
+export type Theme = 'general' | 'technology' | 'nature' | 'science' | 'history';
+export type ChallengeType = 'standard' | 'punctuation' | 'numbers' | 'speed';
+
 interface GeneratePassageParams {
   difficulty?: Difficulty;
   length?: Length;
