@@ -68,10 +68,18 @@ export default function LeaderboardPage() {
     date: new Date().toISOString(),
   }));
 
-  const displayTopThree = topThree.length > 0 ? [topThree[1], topThree[0], topThree[2]].filter(Boolean) : placeholderTopThree;
+  // Map ranks to display positions: [left (rank 2), middle (rank 1), right (rank 3)]
+  const displayTopThree = topThree.length > 0
+    ? [
+        topThree.find(p => p.rank === 2) || null,  // Left position
+        topThree.find(p => p.rank === 1) || null,  // Middle position
+        topThree.find(p => p.rank === 3) || null   // Right position
+      ]
+    : placeholderTopThree;
   const displayList = restOfLeaderboard.length > 0 ? restOfLeaderboard : (topThree.length === 0 ? placeholderList : []);
 
-  const getInitials = (name: string) => {
+  const getInitials = (name: string | undefined | null) => {
+    if (!name) return "?";
     return name
       .split(" ")
       .map((n) => n[0])

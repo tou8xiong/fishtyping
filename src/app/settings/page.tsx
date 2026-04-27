@@ -180,70 +180,6 @@ export default function SettingsPage() {
                   </button>
                 </div>
               </div>
-
-              {/* Font Family */}
-              <div>
-                <label className="block text-[11px] font-black uppercase tracking-[0.24em] text-foreground/55 mb-3">
-                  Font Family
-                </label>
-                <div className="grid grid-cols-3 gap-3">
-                  <button
-                    onClick={() => handleFontFamilyChange("jetbrains")}
-                    className={`rounded-lg border p-4 text-sm font-medium transition-all ${
-                      settings.fontFamily === "jetbrains"
-                        ? "border-primary/60 bg-primary/10 text-foreground shadow-[0_0_20px_rgba(11,175,231,0.18)]"
-                        : "border-border/60 bg-white/[0.02] text-foreground/70 hover:border-primary/40"
-                    }`}
-                    style={{ fontFamily: "var(--font-geist-mono)" }}
-                  >
-                    JetBrains Mono
-                  </button>
-                  <button
-                    onClick={() => handleFontFamilyChange("crimson")}
-                    className={`rounded-lg border p-4 text-sm font-medium transition-all ${
-                      settings.fontFamily === "crimson"
-                        ? "border-primary/60 bg-primary/10 text-foreground shadow-[0_0_20px_rgba(11,175,231,0.18)]"
-                        : "border-border/60 bg-white/[0.02] text-foreground/70 hover:border-primary/40"
-                    }`}
-                    style={{ fontFamily: "var(--font-crimson-text)" }}
-                  >
-                    Crimson Text
-                  </button>
-                  <button
-                    onClick={() => handleFontFamilyChange("garamond")}
-                    className={`rounded-lg border p-4 text-sm font-medium transition-all ${
-                      settings.fontFamily === "garamond"
-                        ? "border-primary/60 bg-primary/10 text-foreground shadow-[0_0_20px_rgba(11,175,231,0.18)]"
-                        : "border-border/60 bg-white/[0.02] text-foreground/70 hover:border-primary/40"
-                    }`}
-                    style={{ fontFamily: "var(--font-eb-garamond)" }}
-                  >
-                    EB Garamond
-                  </button>
-                </div>
-              </div>
-
-              {/* Font Size */}
-              <div>
-                <label className="block text-[11px] font-black uppercase tracking-[0.24em] text-foreground/55 mb-3">
-                  Font Size
-                </label>
-                <div className="grid grid-cols-3 gap-3">
-                  {(["small", "medium", "large"] as const).map((size) => (
-                    <button
-                      key={size}
-                      onClick={() => handleFontSizeChange(size)}
-                      className={`rounded-lg border p-4 text-xs font-black uppercase tracking-wider transition-all ${
-                        settings.fontSize === size
-                          ? "border-primary/60 bg-primary/10 text-foreground shadow-[0_0_20px_rgba(11,175,231,0.18)]"
-                          : "border-border/60 bg-white/[0.02] text-foreground/70 hover:border-primary/40"
-                      }`}
-                    >
-                      {size}
-                    </button>
-                  ))}
-                </div>
-              </div>
             </div>
           </section>
 
@@ -254,7 +190,7 @@ export default function SettingsPage() {
                 <LuCircleUserRound className="h-5 w-5 text-primary/80" />
                 <h2 className="text-2xl font-black tracking-tight text-foreground/65">Typing Preferences</h2>
               </div>
-              <p className="text-base text-foreground/40">Set your default typing settings.</p>
+              <p className="text-base text-foreground/40">Configure your typing test experience.</p>
             </div>
 
             <div className="mt-5 h-px w-full bg-border/80" />
@@ -304,15 +240,82 @@ export default function SettingsPage() {
                 </div>
               </div>
 
+              {/* Font Family - Moved from Appearance */}
+              <div>
+                <label className="block text-[11px] font-black uppercase tracking-[0.24em] text-foreground/55 mb-3">
+                  Typing Font Family
+                </label>
+                <div className="grid grid-cols-3 gap-3">
+                  <button
+                    onClick={() => handleFontFamilyChange("jetbrains")}
+                    className={`rounded-lg border p-4 text-sm font-medium transition-all ${
+                      settings.fontFamily === "jetbrains"
+                        ? "border-primary/60 bg-primary/10 text-foreground shadow-[0_0_20px_rgba(11,175,231,0.18)]"
+                        : "border-border/60 bg-white/[0.02] text-foreground/70 hover:border-primary/40"
+                    }`}
+                    style={{ fontFamily: "var(--font-geist-mono)" }}
+                  >
+                    JetBrains Mono
+                  </button>
+                  <button
+                    onClick={() => handleFontFamilyChange("crimson")}
+                    className={`rounded-lg border p-4 text-sm font-medium transition-all ${
+                      settings.fontFamily === "crimson"
+                        ? "border-primary/60 bg-primary/10 text-foreground shadow-[0_0_20px_rgba(11,175,231,0.18)]"
+                        : "border-border/60 bg-white/[0.02] text-foreground/70 hover:border-primary/40"
+                    }`}
+                    style={{ fontFamily: "var(--font-crimson-text)" }}
+                  >
+                    Crimson Text
+                  </button>
+                  <button
+                    onClick={() => handleFontFamilyChange("garamond")}
+                    className={`rounded-lg border p-4 text-sm font-medium transition-all ${
+                      settings.fontFamily === "garamond"
+                        ? "border-primary/60 bg-primary/10 text-foreground shadow-[0_0_20px_rgba(11,175,231,0.18)]"
+                        : "border-border/60 bg-white/[0.02] text-foreground/70 hover:border-primary/40"
+                    }`}
+                    style={{ fontFamily: "var(--font-eb-garamond)" }}
+                  >
+                    EB Garamond
+                  </button>
+                </div>
+              </div>
+
+              {/* Font Size - Moved from Appearance */}
+              <div>
+                <label className="block text-[11px] font-black uppercase tracking-[0.24em] text-foreground/55 mb-3">
+                  Typing Font Size
+                </label>
+                <div className="grid grid-cols-3 gap-3">
+                  {(["small", "medium", "large"] as const).map((size) => (
+                    <button
+                      key={size}
+                      onClick={() => handleFontSizeChange(size)}
+                      className={`rounded-lg border p-4 text-xs font-black uppercase tracking-wider transition-all ${
+                        settings.fontSize === size
+                          ? "border-primary/60 bg-primary/10 text-foreground shadow-[0_0_20px_rgba(11,175,231,0.18)]"
+                          : "border-border/60 bg-white/[0.02] text-foreground/70 hover:border-primary/40"
+                      }`}
+                    >
+                      {size}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
               {/* Toggle Settings */}
               <div className="space-y-3">
                 {[
-                  { key: "soundEffects" as const, label: "Sound Effects" },
-                  { key: "showLiveWpm" as const, label: "Show Live WPM" },
-                  { key: "smoothCaret" as const, label: "Smooth Caret" },
+                  { key: "soundEffects" as const, label: "Sound Effects", description: "Play sounds during typing" },
+                  { key: "showLiveWpm" as const, label: "Show Live WPM", description: "Display WPM while typing" },
+                  { key: "smoothCaret" as const, label: "Smooth Caret", description: "Smooth caret animation" },
                 ].map((setting) => (
                   <div key={setting.key} className="flex items-center justify-between rounded-lg border border-border/60 bg-white/[0.02] p-4">
-                    <span className="text-sm font-medium text-foreground/80">{setting.label}</span>
+                    <div>
+                      <span className="text-sm font-medium text-foreground/80">{setting.label}</span>
+                      <p className="text-xs text-foreground/50 mt-0.5">{setting.description}</p>
+                    </div>
                     <button
                       onClick={() => toggleSetting(setting.key)}
                       className={`relative h-6 w-11 rounded-full transition-colors ${

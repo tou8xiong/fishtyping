@@ -4,7 +4,9 @@
       "mcp__ide__getDiagnostics",
       "Bash(npx supabase *)",
       "Bash(npx tsc *)",
-      "Bash(npm install *)"
+      "Bash(npm install *)",
+      "Bash(curl -X POST http://localhost:3000/api/generate-passage -H \"Content-Type: application/json\" -d '{\"difficulty\":\"expert\",\"length\":\"medium\",\"language\":\"lao\"}')",
+      "Bash(node:*)"
     ]
   }
 }

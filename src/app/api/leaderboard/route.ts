@@ -65,7 +65,13 @@ export async function GET(request: Request) {
       .slice(0, limit)
       .map((entry, index) => ({
         rank: index + 1,
-        ...entry,
+        userId: entry.userId,
+        username: entry.username,
+        displayName: entry.displayName,
+        avatarUrl: entry.avatarUrl,
+        wpm: entry.wpm,
+        accuracy: entry.accuracy,
+        date: entry.date,
       }));
 
     return NextResponse.json({ leaderboard });

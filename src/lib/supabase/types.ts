@@ -3,12 +3,14 @@ export type Length = 'short' | 'medium' | 'long';
 export type Language = 'english' | 'lao';
 export type PassageStatus = 'generating' | 'ready' | 'in_use' | 'archived';
 export type GeneratedBy = 'manual' | 'ai';
+export type Theme = 'general' | 'technology' | 'nature' | 'science' | 'history';
+export type ChallengeType = 'standard' | 'punctuation' | 'numbers' | 'speed';
 
 // Word count ranges by difficulty
 export const WORD_COUNT_BY_DIFFICULTY = {
-  beginner: { min: 15, max: 30, description: 'Short, builds confidence, simple words' },
-  advanced: { min: 100, max: 150, description: 'Tests sustained focus and stamina' },
-  expert: { min: 200, max: 300, description: 'For serious practice only' },
+  beginner: { min: 15, max: 25, description: 'Progressive: letters → short words' },
+  advanced: { min: 25, max: 30, description: 'Regular words, no complex symbols' },
+  expert: { min: 30, max: 45, description: 'Includes symbols and punctuation' },
 } as const;
 
 export interface User {

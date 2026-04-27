@@ -67,18 +67,27 @@ export async function releasePassage(passageId: string): Promise<void> {
 export async function savePassageHistory(data: {
   userId: string;
   passageId: string;
+  difficulty: Difficulty;
   wpm?: number;
   accuracy?: number;
   durationMs?: number;
 }): Promise<void> {
   const supabase = getClient();
-  await supabase.from('passage_history').insert({
+  const { data: result, error } = await supabase.from('passage_history').insert({
     user_id: data.userId,
     passage_id: data.passageId,
+    difficulty: data.difficulty,
     wpm: data.wpm,
     accuracy: data.accuracy,
     duration_ms: data.durationMs,
   });
+
+  if (error) {
+    console.error('savePassageHistory: Database error', error);
+    throw error;
+  }
+
+  console.log('savePassageHistory: Insert successful', result);
 }
 
 export async function getUserProfile(userId: string): Promise<User | null> {

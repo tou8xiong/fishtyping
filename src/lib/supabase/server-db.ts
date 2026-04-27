@@ -7,10 +7,11 @@ export async function fetchPassage(params: {
   length?: Length;
   language?: Language;
   userId?: string;
+  excludePassageId?: string;
 }): Promise<Passage | null> {
   try {
     const supabase = await createClient();
-    const { difficulty = 'beginner', length = 'medium', language = 'english', userId } = params;
+    const { difficulty = 'beginner', length = 'medium', language = 'english', userId, excludePassageId } = params;
 
     let query = supabase
       .from('passages')
@@ -27,6 +28,16 @@ export async function fetchPassage(params: {
       return null;
     }
 
+    // Filter out the excluded passage
+    let availablePassages = excludePassageId
+      ? passages.filter(p => p.id !== excludePassageId)
+      : passages;
+
+    // If all passages are excluded, use all passages
+    if (availablePassages.length === 0) {
+      availablePassages = passages;
+    }
+
     if (userId) {
       const { data: history } = await supabase
         .from('passage_history')
@@ -34,7 +45,7 @@ export async function fetchPassage(params: {
         .eq('user_id', userId);
 
       const usedIds = new Set(history?.map(h => h.passage_id) || []);
-      const available = passages.filter(p => !usedIds.has(p.id));
+      const available = availablePassages.filter(p => !usedIds.has(p.id));
 
       if (available.length > 0) {
         const random = available[Math.floor(Math.random() * available.length)];
@@ -43,7 +54,7 @@ export async function fetchPassage(params: {
       }
     }
 
-    const random = passages[Math.floor(Math.random() * passages.length)];
+    const random = availablePassages[Math.floor(Math.random() * availablePassages.length)];
     await supabase.from('passages').update({ used_count: random.used_count + 1 }).eq('id', random.id);
     return random as Passage;
   } catch (error) {
@@ -63,6 +74,7 @@ export async function releasePassageOnReturn(passageId: string): Promise<void> {
 export async function trackHistory(data: {
   userId: string;
   passageId: string;
+  difficulty: Difficulty;
   wpm: number;
   accuracy: number;
   durationMs: number;
@@ -71,6 +83,7 @@ export async function trackHistory(data: {
     await savePassageHistory({
       userId: data.userId,
       passageId: data.passageId,
+      difficulty: data.difficulty,
       wpm: data.wpm,
       accuracy: data.accuracy,
       durationMs: data.durationMs,

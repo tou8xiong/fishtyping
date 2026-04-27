@@ -61,13 +61,7 @@ export function SettingsProvider({ children }: { children: React.ReactNode }) {
       root.classList.toggle("dark", settings.theme === "dark");
       root.classList.toggle("light", settings.theme === "light");
     }
-
-    // Apply font family
-    root.setAttribute("data-font", settings.fontFamily);
-
-    // Apply font size
-    root.setAttribute("data-font-size", settings.fontSize);
-  }, [settings.theme, settings.fontFamily, settings.fontSize]);
+  }, [settings.theme]);
 
   const updateSettings = (newSettings: Partial<Settings>) => {
     setSettings((prev) => {

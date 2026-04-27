@@ -18,7 +18,7 @@ const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || 'eyJhbGciOiJIUz
 const supabase = createClient(supabaseUrl, supabaseKey);
 
 // Your real Firebase user ID
-const userId = '8OZdxsSF8gY5ysBogP5yqkTMaZI3';
+const userId = 'Oj2aRmyFm1ZBmu6u20XKhkRLCCc2';
 
 const testTypingHistory = [
   { wpm: 85, accuracy: 96.5, duration_ms: 120000, difficulty: 'expert' },

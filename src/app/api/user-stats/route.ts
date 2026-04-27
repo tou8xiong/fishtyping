@@ -12,12 +12,11 @@ export async function GET(request: Request) {
 
     const supabase = await createClient();
 
-    // Fetch passage history for expert level only
+    // Fetch passage history for all difficulty levels
     const { data: history, error } = await supabase
       .from("passage_history")
       .select("*")
       .eq("user_id", userId)
-      .eq("difficulty", "expert")
       .order("attempted_at", { ascending: false });
 
     if (error) {

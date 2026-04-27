@@ -5,7 +5,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import type { Passage, Language, Difficulty, Length } from "@/lib/supabase/types";
-import { MdAdd, MdClose } from "react-icons/md";
+import { MdAdd, MdClose, MdEdit, MdDelete } from "react-icons/md";
 
 const ADMIN_EMAIL = "touxhk@gmail.com";
 const ADMIN_ID = "8OZdxsSF8gY5ysBogP5yqkTMaZI3";
@@ -27,6 +27,8 @@ export default function AdminPage() {
   const [languageFilter, setLanguageFilter] = useState<Language | "all">("all");
   const [difficultyFilter, setDifficultyFilter] = useState<Difficulty | "all">("all");
   const [showModal, setShowModal] = useState(false);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [passageToDelete, setPassageToDelete] = useState<string | null>(null);
   const [formData, setFormData] = useState<PassageFormData>({
     content: "",
     language: "english",
@@ -125,6 +127,43 @@ export default function AdminPage() {
       console.error("Failed to save passage:", error);
       alert("Failed to save passage");
     }
+  };
+
+  const handleEdit = (e: React.MouseEvent, passageId: string) => {
+    e.stopPropagation();
+    router.push(`/admin/passages/${passageId}`);
+  };
+
+  const handleDelete = async (e: React.MouseEvent, passageId: string) => {
+    e.stopPropagation();
+    setPassageToDelete(passageId);
+    setShowDeleteModal(true);
+  };
+
+  const confirmDelete = async () => {
+    if (!passageToDelete) return;
+
+    try {
+      const supabase = createClient();
+      const { error } = await supabase
+        .from("passages")
+        .delete()
+        .eq("id", passageToDelete);
+
+      if (error) throw error;
+
+      await fetchPassages();
+      setShowDeleteModal(false);
+      setPassageToDelete(null);
+    } catch (error) {
+      console.error("Failed to delete passage:", error);
+      alert("Failed to delete passage");
+    }
+  };
+
+  const cancelDelete = () => {
+    setShowDeleteModal(false);
+    setPassageToDelete(null);
   };
 
   if (loading || isLoading) {
@@ -239,6 +278,7 @@ export default function AdminPage() {
                   <th className="text-left py-4 px-4 text-xs uppercase tracking-wider text-foreground/50 font-black">Status</th>
                   <th className="text-left py-4 px-4 text-xs uppercase tracking-wider text-foreground/50 font-black">Used</th>
                   <th className="text-left py-4 px-4 text-xs uppercase tracking-wider text-foreground/50 font-black">Content</th>
+                  <th className="text-right py-4 px-4 text-xs uppercase tracking-wider text-foreground/50 font-black">Actions</th>
                 </tr>
               </thead>
               <tbody>
@@ -267,6 +307,24 @@ export default function AdminPage() {
                     <td className="py-3 px-4 capitalize text-foreground/60">{passage.status}</td>
                     <td className="py-3 px-4 text-foreground/80">{passage.used_count}</td>
                     <td className="py-3 px-4 text-foreground/60 max-w-md truncate">{passage.content}</td>
+                    <td className="py-3 px-4">
+                      <div className="flex items-center justify-end gap-2">
+                        <button
+                          onClick={(e) => handleEdit(e, passage.id)}
+                          className="p-2 bg-blue-500/20 text-blue-400 rounded hover:bg-blue-500/30 transition-all"
+                          title="Edit passage"
+                        >
+                          <MdEdit className="h-4 w-4" />
+                        </button>
+                        <button
+                          onClick={(e) => handleDelete(e, passage.id)}
+                          className="p-2 bg-red-500/20 text-red-400 rounded hover:bg-red-500/30 transition-all"
+                          title="Delete passage"
+                        >
+                          <MdDelete className="h-4 w-4" />
+                        </button>
+                      </div>
+                    </td>
                   </tr>
                 ))}
               </tbody>
@@ -274,7 +332,7 @@ export default function AdminPage() {
           </div>
         </div>
 
-        {/* Modal */}
+        {/* Create Modal */}
         {showModal && (
           <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4">
             <div className="relative w-full max-w-2xl max-h-[85vh] overflow-y-auto bg-[#1e1e1e] border border-white/10 rounded-lg p-5">
@@ -370,6 +428,44 @@ export default function AdminPage() {
                   </button>
                 </div>
               </form>
+            </div>
+          </div>
+        )}
+
+        {/* Delete Confirmation Modal */}
+        {showDeleteModal && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4">
+            <div className="relative w-full max-w-md bg-[#1e1e1e] border border-white/10 rounded-lg p-6">
+              <div className="flex items-center justify-between mb-4">
+                <h2 className="text-xl font-black uppercase tracking-wider text-white">
+                  Delete Passage
+                </h2>
+                <button
+                  onClick={cancelDelete}
+                  className="flex items-center justify-center h-7 w-7 rounded bg-white/10 text-white hover:bg-white/20 transition-all"
+                >
+                  <MdClose className="h-4 w-4" />
+                </button>
+              </div>
+
+              <p className="text-foreground/80 mb-6">
+                Are you sure you want to delete this passage? This action cannot be undone.
+              </p>
+
+              <div className="flex gap-3">
+                <button
+                  onClick={confirmDelete}
+                  className="flex-1 px-5 py-2.5 bg-red-500 text-white text-sm font-bold rounded-lg hover:bg-red-600 transition-all"
+                >
+                  Delete
+                </button>
+                <button
+                  onClick={cancelDelete}
+                  className="flex-1 px-5 py-2.5 bg-white/10 text-white text-sm font-bold rounded-lg hover:bg-white/20 transition-all"
+                >
+                  Cancel
+                </button>
+              </div>
             </div>
           </div>
         )}
