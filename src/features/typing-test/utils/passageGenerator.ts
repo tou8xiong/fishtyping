@@ -38,39 +38,26 @@ export async function trackPassageResult(data: {
   wpm: number;
   accuracy: number;
   durationMs: number;
+  userId: string;
 }): Promise<void> {
   try {
     if (typeof window === "undefined") {
-      console.log('trackPassageResult: window is undefined');
       return;
     }
 
-    const supabase = createClient();
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) {
-      console.log('trackPassageResult: No user logged in');
+    if (!data.userId) {
+      console.warn('trackPassageResult: No user ID provided, skipping save');
       return;
     }
-
-    console.log('trackPassageResult: Saving passage history', {
-      userId: user.id,
-      passageId: data.passageId,
-      difficulty: data.difficulty,
-      wpm: data.wpm,
-      accuracy: data.accuracy,
-      durationMs: data.durationMs,
-    });
 
     await savePassageHistory({
-      userId: user.id,
+      userId: data.userId,
       passageId: data.passageId,
       difficulty: data.difficulty,
       wpm: data.wpm,
       accuracy: data.accuracy,
       durationMs: data.durationMs,
     });
-
-    console.log('trackPassageResult: Successfully saved passage history');
   } catch (error) {
     console.error('trackPassageResult: Error saving passage history', error);
   }

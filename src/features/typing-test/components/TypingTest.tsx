@@ -6,6 +6,7 @@ import { trackPassageResult, Difficulty, Language, WORD_COUNT_BY_DIFFICULTY, DEF
 import { getBeginnerPhase, getLetterPracticeText, trackBeginnerProgress } from '../utils/beginnerProgress';
 import { FaRotateRight } from "react-icons/fa6";
 import { useSettings } from '@/contexts/SettingsContext';
+import { useAuth } from '@/hooks/useAuth'
 
 function cn(...classes: (string | boolean | undefined)[]) {
   return classes.filter(Boolean).join(' ');
@@ -13,6 +14,7 @@ function cn(...classes: (string | boolean | undefined)[]) {
 
 export const TypingTest = () => {
   const { settings } = useSettings();
+  const { user } = useAuth();
   const [difficulty, setDifficulty] = useState<Difficulty>(settings.defaultDifficulty);
   const [language, setLanguage] = useState<Language>(settings.defaultLanguage);
   const [isMounted, setIsMounted] = useState(false);
@@ -70,19 +72,33 @@ export const TypingTest = () => {
     inputRef.current?.focus();
   }, []);
 
-  // Save results when typing is finished (only for Expert level)
+  // Save results when typing is finished
   useEffect(() => {
-    if (isFinished && currentPassageId && stats.wpm > 0 && difficulty === 'expert') {
-      trackPassageResult({
-        passageId: currentPassageId,
-        difficulty: difficulty,
-        wpm: stats.wpm,
-        accuracy: stats.accuracy,
-        durationMs: timeElapsed,
-      }).catch(err => console.error('Failed to save result:', err));
+    if (!isFinished) return;
+
+    // Skip saving for beginner/letters phase (no passageId)
+    if (difficulty === 'beginner' && beginnerPhase === 'letters') return;
+
+    if (!currentPassageId) {
+      console.warn('Cannot save result: no passageId (using default passage)');
+      return;
     }
 
-    // Track beginner progress
+    if (stats.wpm < 0) return;
+
+    console.log('Saving passage result:', { passageId: currentPassageId, difficulty, wpm: stats.wpm, accuracy: stats.accuracy, userId: user?.id });
+    trackPassageResult({
+      passageId: currentPassageId,
+      difficulty: difficulty,
+      wpm: stats.wpm,
+      accuracy: stats.accuracy,
+      durationMs: timeElapsed,
+      userId: user?.id || '',
+    }).catch(err => console.error('Failed to save result:', err));
+  }, [isFinished, currentPassageId, stats.wpm, stats.accuracy, timeElapsed, difficulty, beginnerPhase, userInput, sampleText]);
+
+  // Track beginner progress
+  useEffect(() => {
     if (isFinished && difficulty === 'beginner' && beginnerPhase === 'letters') {
       const correctLetters = userInput.split('').filter((char, i) => char === sampleText[i]).length;
       trackBeginnerProgress(userInput.length, correctLetters);
@@ -93,7 +109,7 @@ export const TypingTest = () => {
         setBeginnerPhase('words');
       }
     }
-  }, [isFinished, currentPassageId, stats.wpm, stats.accuracy, timeElapsed, difficulty, beginnerPhase, userInput, sampleText]);
+  }, [isFinished, beginnerPhase, userInput, sampleText]);
 
   const loadNewPassage = useCallback(async () => {
     setIsGenerating(true);
@@ -106,6 +122,7 @@ export const TypingTest = () => {
         return;
       }
 
+      console.log('Loading new passage, currentPassageId:', currentPassageId);
       const response = await fetch('/api/generate-passage', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -119,6 +136,7 @@ export const TypingTest = () => {
 
       if (response.ok) {
         const data = await response.json();
+        console.log('API response:', data);
         setSampleText(data.passage);
         setCurrentPassageId(data.passageId || null);
       } else {
@@ -127,6 +145,7 @@ export const TypingTest = () => {
         setCurrentPassageId(null);
       }
     } catch (error) {
+      console.error('API error:', error);
       // Use default passages on error
       setSampleText(DEFAULT_PASSAGES[difficulty][language]);
       setCurrentPassageId(null);
