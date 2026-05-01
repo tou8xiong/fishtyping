@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import { useAuth } from "@/hooks/useAuth";
 import { useRouter, useParams } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
+import AdminLayout from "@/components/AdminLayout";
 import type { Passage, Language, Difficulty, Length } from "@/lib/supabase/types";
 import { MdArrowBack } from "react-icons/md";
 import Link from "next/link";
@@ -97,9 +98,11 @@ export default function EditPassagePage() {
 
   if (loading || isLoading) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-[#1e1e1e]">
-        <div className="text-xl text-white">Loading...</div>
-      </div>
+      <AdminLayout>
+        <div className="flex min-h-screen items-center justify-center">
+          <div className="text-xl text-white">Loading...</div>
+        </div>
+      </AdminLayout>
     );
   }
 
@@ -112,26 +115,24 @@ export default function EditPassagePage() {
   }
 
   return (
-    <div className="min-h-screen bg-[#1e1e1e] py-8 px-4">
-      <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] bg-primary/10 rounded-full blur-[120px] animate-pulse" />
-      <div className="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] bg-primary/5 rounded-full blur-[120px] animate-pulse" style={{ animationDelay: '2s' }} />
+    <AdminLayout>
+      <div className="py-8 px-4">
+        <div className="max-w-4xl mx-auto">
+          <div className="mb-8">
+            <Link
+              href="/admin"
+              className="inline-flex items-center gap-2 text-primary hover:text-primary/80 transition-colors mb-4"
+            >
+              <MdArrowBack className="h-5 w-5" />
+              Back to Admin
+            </Link>
+            <h1 className="text-4xl font-black uppercase tracking-wider text-white mb-2">
+              Edit Passage
+            </h1>
+            <p className="text-foreground/60">Modify passage details and content</p>
+          </div>
 
-      <div className="relative z-10 max-w-4xl mx-auto">
-        <div className="mb-8">
-          <Link
-            href="/admin"
-            className="inline-flex items-center gap-2 text-primary hover:text-primary/80 transition-colors mb-4"
-          >
-            <MdArrowBack className="h-5 w-5" />
-            Back to Admin
-          </Link>
-          <h1 className="text-4xl font-black uppercase tracking-wider text-white mb-2">
-            Edit Passage
-          </h1>
-          <p className="text-foreground/60">Modify passage details and content</p>
-        </div>
-
-        <form onSubmit={handleSubmit} className="bg-white/3 border border-white/10 rounded-lg p-6 space-y-6">
+          <form onSubmit={handleSubmit} className="bg-white/3 border border-white/10 rounded-lg p-6 space-y-6">
           <div>
             <label className="block text-sm font-bold uppercase tracking-wider text-white mb-2">
               Content *
@@ -216,5 +217,6 @@ export default function EditPassagePage() {
         </form>
       </div>
     </div>
+    </AdminLayout>
   );
 }
