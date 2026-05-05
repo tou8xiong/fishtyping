@@ -17,12 +17,10 @@ interface LeaderboardEntry {
   avatarUrl: string | null;
   preferredLanguage: string;
   createdAt: string;
-  bestWpm: number;
-  bestAccuracy: number;
-  bestDate: string;
-  avgWpm: number;
-  avgAccuracy: number;
-  totalAttempts: number;
+  wpm: number;
+  accuracy: number;
+  attemptedAt: string;
+  passageId: string;
 }
 
 interface Stats {
@@ -44,6 +42,7 @@ export default function AdminRankingPage() {
   });
   const [isLoading, setIsLoading] = useState(true);
   const [difficultyFilter, setDifficultyFilter] = useState<string>("expert");
+  const [languageFilter, setLanguageFilter] = useState<string>("all");
   const [searchQuery, setSearchQuery] = useState("");
   const [filteredLeaderboard, setFilteredLeaderboard] = useState<LeaderboardEntry[]>([]);
 
@@ -65,7 +64,7 @@ export default function AdminRankingPage() {
     try {
       setIsLoading(true);
       const response = await fetch(
-        `/api/admin/ranking?difficulty=${difficultyFilter}&limit=100`,
+        `/api/admin/ranking?difficulty=${difficultyFilter}&limit=1000`,
         {
           headers: {
             Authorization: `Bearer ${user?.id}`,
@@ -98,8 +97,12 @@ export default function AdminRankingPage() {
       );
     }
 
+    if (languageFilter !== "all") {
+      filtered = filtered.filter((entry) => entry.preferredLanguage === languageFilter);
+    }
+
     setFilteredLeaderboard(filtered);
-  }, [searchQuery, leaderboard]);
+  }, [searchQuery, languageFilter, leaderboard]);
 
   if (loading || isLoading) {
     return (
@@ -116,6 +119,7 @@ export default function AdminRankingPage() {
   }
 
   const difficulties = ["beginner", "advanced", "expert"];
+  const languages = ["all", "english", "lao"];
 
   return (
     <AdminLayout>
@@ -130,41 +134,41 @@ export default function AdminRankingPage() {
 
           {/* Stats */}
           <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
-            <div className="bg-white/3 border border-white/10 rounded-lg p-6">
-              <div className="flex items-center gap-3 mb-2">
-                <MdPerson className="h-6 w-6 text-primary" />
+            <div className="bg-white/3 border border-white/10 rounded-lg p-4">
+              <div className="flex items-center gap-3 mb-1">
+                <MdPerson className="h-5 w-5 text-primary" />
                 <div className="text-xs uppercase tracking-wider text-foreground/50">
                   Total Users
                 </div>
               </div>
-              <div className="text-3xl font-bold text-primary">{stats.totalUsers}</div>
+              <div className="text-2xl font-bold text-primary">{stats.totalUsers}</div>
             </div>
-            <div className="bg-white/3 border border-white/10 rounded-lg p-6">
-              <div className="flex items-center gap-3 mb-2">
-                <MdCheckCircle className="h-6 w-6 text-green-400" />
+            <div className="bg-white/3 border border-white/10 rounded-lg p-4">
+              <div className="flex items-center gap-3 mb-1">
+                <MdCheckCircle className="h-5 w-5 text-green-400" />
                 <div className="text-xs uppercase tracking-wider text-foreground/50">
                   Total Attempts
                 </div>
               </div>
-              <div className="text-3xl font-bold text-white">{stats.totalAttempts}</div>
+              <div className="text-2xl font-bold text-white">{stats.totalAttempts}</div>
             </div>
-            <div className="bg-white/3 border border-white/10 rounded-lg p-6">
-              <div className="flex items-center gap-3 mb-2">
-                <MdSpeed className="h-6 w-6 text-blue-400" />
+            <div className="bg-white/3 border border-white/10 rounded-lg p-4">
+              <div className="flex items-center gap-3 mb-1">
+                <MdSpeed className="h-5 w-5 text-blue-400" />
                 <div className="text-xs uppercase tracking-wider text-foreground/50">
                   Average WPM
                 </div>
               </div>
-              <div className="text-3xl font-bold text-white">{stats.avgWpm}</div>
+              <div className="text-2xl font-bold text-white">{stats.avgWpm}</div>
             </div>
-            <div className="bg-white/3 border border-white/10 rounded-lg p-6">
-              <div className="flex items-center gap-3 mb-2">
-                <MdEmojiEvents className="h-6 w-6 text-yellow-400" />
+            <div className="bg-white/3 border border-white/10 rounded-lg p-4">
+              <div className="flex items-center gap-3 mb-1">
+                <MdEmojiEvents className="h-5 w-5 text-yellow-400" />
                 <div className="text-xs uppercase tracking-wider text-foreground/50">
                   Top WPM
                 </div>
               </div>
-              <div className="text-3xl font-bold text-primary">{stats.topWpm}</div>
+              <div className="text-2xl font-bold text-primary">{stats.topWpm}</div>
             </div>
           </div>
 
@@ -203,6 +207,26 @@ export default function AdminRankingPage() {
                   ))}
                 </div>
               </div>
+
+              <div>
+                <label className="block text-xs uppercase tracking-wider text-foreground/50 mb-2">
+                  Language
+                </label>
+                <div className="flex gap-2">
+                  {languages.map((lang) => (
+                    <button
+                      key={lang}
+                      onClick={() => setLanguageFilter(lang)}
+                      className={`px-4 py-2 rounded-md text-xs font-bold uppercase tracking-wider transition-all ${languageFilter === lang
+                        ? "bg-primary text-black"
+                        : "bg-white/5 text-foreground/60 hover:bg-white/10"
+                        }`}
+                    >
+                      {lang}
+                    </button>
+                  ))}
+                </div>
+              </div>
             </div>
           </div>
 
@@ -210,7 +234,7 @@ export default function AdminRankingPage() {
           <div className="bg-white/3 border border-white/10 rounded-lg overflow-hidden">
             <div className="overflow-x-auto max-h-[600px] overflow-y-auto">
               <table className="w-full text-sm">
-                <thead className="sticky top-0 bg-white/5 border-b border-white/10">
+                <thead className="sticky top-0 bg-[#1e1e1e] border-b border-white/10">
                   <tr>
                     <th className="text-left py-4 px-4 text-xs uppercase tracking-wider text-foreground/50 font-black">
                       Rank
@@ -222,29 +246,23 @@ export default function AdminRankingPage() {
                       Language
                     </th>
                     <th className="text-right py-4 px-4 text-xs uppercase tracking-wider text-foreground/50 font-black">
-                      Best WPM
+                      WPM
                     </th>
                     <th className="text-right py-4 px-4 text-xs uppercase tracking-wider text-foreground/50 font-black">
-                      Best Accuracy
-                    </th>
-                    <th className="text-right py-4 px-4 text-xs uppercase tracking-wider text-foreground/50 font-black">
-                      Avg WPM
-                    </th>
-                    <th className="text-right py-4 px-4 text-xs uppercase tracking-wider text-foreground/50 font-black">
-                      Avg Accuracy
-                    </th>
-                    <th className="text-right py-4 px-4 text-xs uppercase tracking-wider text-foreground/50 font-black">
-                      Attempts
+                      Accuracy
                     </th>
                     <th className="text-left py-4 px-4 text-xs uppercase tracking-wider text-foreground/50 font-black">
-                      Best Date
+                      Attempted At
+                    </th>
+                    <th className="text-left py-4 px-4 text-xs uppercase tracking-wider text-foreground/50 font-black">
+                      Passage ID
                     </th>
                   </tr>
                 </thead>
                 <tbody>
-                  {filteredLeaderboard.map((entry) => (
+                  {filteredLeaderboard.map((entry, index) => (
                     <tr
-                      key={entry.userId}
+                      key={`${entry.userId}-${entry.attemptedAt}-${index}`}
                       className="border-b border-white/5 hover:bg-white/5 transition-colors"
                     >
                       <td className="py-3 px-4">
@@ -275,22 +293,16 @@ export default function AdminRankingPage() {
                         </span>
                       </td>
                       <td className="py-3 px-4 text-right">
-                        <span className="text-primary font-bold text-lg">{entry.bestWpm}</span>
+                        <span className="text-primary font-bold text-lg">{entry.wpm}</span>
                       </td>
                       <td className="py-3 px-4 text-right text-foreground/80">
-                        {entry.bestAccuracy}%
-                      </td>
-                      <td className="py-3 px-4 text-right text-foreground/80 font-medium">
-                        {entry.avgWpm}
-                      </td>
-                      <td className="py-3 px-4 text-right text-foreground/80">
-                        {entry.avgAccuracy}%
-                      </td>
-                      <td className="py-3 px-4 text-right text-foreground/80">
-                        {entry.totalAttempts}
+                        {entry.accuracy}%
                       </td>
                       <td className="py-3 px-4 text-foreground/60 text-xs">
-                        {new Date(entry.bestDate).toLocaleDateString()}
+                        {new Date(entry.attemptedAt).toLocaleString()}
+                      </td>
+                      <td className="py-3 px-4 text-foreground/60 text-xs font-mono">
+                        {entry.passageId.slice(0, 8)}...
                       </td>
                     </tr>
                   ))}

@@ -8,17 +8,20 @@ interface LeaderboardEntry {
   username: string;
   displayName: string;
   avatarUrl?: string;
+  preferredLanguage?: string;
   wpm: number;
   accuracy: number;
   date: string;
 }
 
 const filters = ["Today", "This Week", "All Time"];
+const languages = ["English", "Lao"];
 
 export default function LeaderboardPage() {
   const [leaderboard, setLeaderboard] = useState<LeaderboardEntry[]>([]);
   const [loading, setLoading] = useState(true);
   const [activeFilter, setActiveFilter] = useState<string>("All Time");
+  const [activeLanguage, setActiveLanguage] = useState<string>("English");
 
   useEffect(() => {
     fetch("/api/leaderboard")
@@ -40,12 +43,22 @@ export default function LeaderboardPage() {
     const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
     const weekAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
 
+    let filtered = data;
     if (activeFilter === "Today") {
-      return data.filter((entry) => new Date(entry.date) >= today);
+      filtered = data.filter((entry) => new Date(entry.date) >= today);
     } else if (activeFilter === "This Week") {
-      return data.filter((entry) => new Date(entry.date) >= weekAgo);
+      filtered = data.filter((entry) => new Date(entry.date) >= weekAgo);
     }
-    return data; // All Time
+
+    // Filter by language (always applied)
+    const langFilter = activeLanguage.toLowerCase();
+    filtered = filtered.filter((entry) => entry.preferredLanguage === langFilter);
+
+    // Re-rank after filtering
+    return filtered.map((entry, index) => ({
+      ...entry,
+      rank: index + 1
+    }));
   };
 
   const filteredLeaderboard = filterLeaderboardByTime(leaderboard);
@@ -68,12 +81,12 @@ export default function LeaderboardPage() {
     date: new Date().toISOString(),
   }));
 
-  // Map ranks to display positions: [left (rank 2), middle (rank 1), right (rank 3)]
+  // Display top three in correct positions: [left (rank 2), middle (rank 1), right (rank 3)]
   const displayTopThree = topThree.length > 0
     ? [
-        topThree.find(p => p.rank === 2) || null,  // Left position
-        topThree.find(p => p.rank === 1) || null,  // Middle position
-        topThree.find(p => p.rank === 3) || null   // Right position
+        topThree[1] || null,  // Left position - 2nd place
+        topThree[0] || null,  // Middle position - 1st place
+        topThree[2] || null   // Right position - 3rd place
       ]
     : placeholderTopThree;
   const displayList = restOfLeaderboard.length > 0 ? restOfLeaderboard : (topThree.length === 0 ? placeholderList : []);
@@ -156,6 +169,26 @@ export default function LeaderboardPage() {
                 );
               })}
             </div>
+          </div>
+
+          {/* Language Filter */}
+          <div className="flex w-full flex-wrap gap-2 justify-center mt-4">
+            {languages.map((lang) => {
+              const active = lang === activeLanguage;
+
+              return (
+                <button
+                  key={lang}
+                  onClick={() => setActiveLanguage(lang)}
+                  className={`rounded-md border px-5 py-2.5 text-[11px] font-black uppercase tracking-[0.25em] transition-all ${active
+                    ? "border-primary bg-primary/15 text-primary shadow-[0_0_22px_rgba(11,175,231,0.22)]"
+                    : "border-border bg-white/3 text-foreground/55 hover:border-primary/40 hover:text-foreground"
+                    }`}
+                >
+                  {lang}
+                </button>
+              );
+            })}
           </div>
         </div>
 

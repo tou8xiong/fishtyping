@@ -27,7 +27,7 @@ export async function GET(request: Request) {
     // Fetch user details
     const { data: usersData, error: usersError } = await supabase
       .from("users")
-      .select("id, username, display_name, avatar_url")
+      .select("id, username, display_name, avatar_url, preferred_language")
       .in("id", userIds);
 
     if (usersError) {
@@ -52,6 +52,7 @@ export async function GET(request: Request) {
           username: user?.username || user?.display_name || "Anonymous",
           displayName: user?.display_name || user?.username || "Anonymous",
           avatarUrl: user?.avatar_url || null,
+          preferredLanguage: user?.preferred_language || "english",
           wpm: entry.wpm,
           accuracy: entry.accuracy,
           date: entry.attempted_at,
@@ -69,6 +70,7 @@ export async function GET(request: Request) {
         username: entry.username,
         displayName: entry.displayName,
         avatarUrl: entry.avatarUrl,
+        preferredLanguage: entry.preferredLanguage,
         wpm: entry.wpm,
         accuracy: entry.accuracy,
         date: entry.date,

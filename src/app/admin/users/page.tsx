@@ -220,25 +220,25 @@ export default function AdminUsersPage() {
 
           {/* Stats */}
           <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
-            <div className="bg-white/3 border border-white/10 rounded-lg p-6">
-              <div className="text-xs uppercase tracking-wider text-foreground/50 mb-2">Total Users</div>
-              <div className="text-3xl font-bold text-primary">{users.length}</div>
+            <div className="bg-white/3 border border-white/10 rounded-lg p-4">
+              <div className="text-xs uppercase tracking-wider text-foreground/50 mb-1">Total Users</div>
+              <div className="text-2xl font-bold text-primary">{users.length}</div>
             </div>
-            <div className="bg-white/3 border border-white/10 rounded-lg p-6">
-              <div className="text-xs uppercase tracking-wider text-foreground/50 mb-2">English</div>
-              <div className="text-3xl font-bold text-white">
+            <div className="bg-white/3 border border-white/10 rounded-lg p-4">
+              <div className="text-xs uppercase tracking-wider text-foreground/50 mb-1">English</div>
+              <div className="text-2xl font-bold text-white">
                 {users.filter((u) => u.preferred_language === "english").length}
               </div>
             </div>
-            <div className="bg-white/3 border border-white/10 rounded-lg p-6">
-              <div className="text-xs uppercase tracking-wider text-foreground/50 mb-2">Lao</div>
-              <div className="text-3xl font-bold text-white">
+            <div className="bg-white/3 border border-white/10 rounded-lg p-4">
+              <div className="text-xs uppercase tracking-wider text-foreground/50 mb-1">Lao</div>
+              <div className="text-2xl font-bold text-white">
                 {users.filter((u) => u.preferred_language === "lao").length}
               </div>
             </div>
-            <div className="bg-white/3 border border-white/10 rounded-lg p-6">
-              <div className="text-xs uppercase tracking-wider text-foreground/50 mb-2">Filtered</div>
-              <div className="text-3xl font-bold text-primary">{filteredUsers.length}</div>
+            <div className="bg-white/3 border border-white/10 rounded-lg p-4">
+              <div className="text-xs uppercase tracking-wider text-foreground/50 mb-1">Filtered</div>
+              <div className="text-2xl font-bold text-primary">{filteredUsers.length}</div>
             </div>
           </div>
 
@@ -285,7 +285,7 @@ export default function AdminUsersPage() {
           <div className="bg-white/3 border border-white/10 rounded-lg overflow-hidden">
             <div className="overflow-x-auto max-h-[600px] overflow-y-auto">
               <table className="w-full text-sm">
-                <thead className="sticky top-0 bg-white/5 border-b border-white/10">
+                <thead className="sticky top-0 bg-[#1e1e1e] border-b border-white/10">
                   <tr>
                     <th className="text-left py-4 px-4 text-xs uppercase tracking-wider text-foreground/50 font-black">
                       ID
