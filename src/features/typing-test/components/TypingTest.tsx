@@ -7,6 +7,8 @@ import { getBeginnerPhase, getLetterPracticeText, trackBeginnerProgress } from '
 import { FaRotateRight } from "react-icons/fa6";
 import { useSettings } from '@/contexts/SettingsContext';
 import { useAuth } from '@/hooks/useAuth'
+import { toast } from 'sonner';
+import { ResultChart } from './ResultChart';
 
 function cn(...classes: (string | boolean | undefined)[]) {
   return classes.filter(Boolean).join(' ');
@@ -25,10 +27,108 @@ export const TypingTest = () => {
   const [beginnerPhase, setBeginnerPhase] = useState<'letters' | 'words'>('letters');
 
   const inputRef = useRef<HTMLInputElement>(null);
+  const typingAudioRef = useRef<HTMLAudioElement | null>(null);
+  const prevInputLengthRef = useRef(0);
+  const soundIdleTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const [isSoundActive, setIsSoundActive] = useState(false);
 
   const [sampleText, setSampleText] = useState('');
 
-  const { userInput, stats, timeElapsed, isFinished, handleInputChange, reset } = useTypingEngine(sampleText);
+  const { userInput, stats, samples, timeElapsed, isFinished, isPaused, handleInputChange, reset, pause } = useTypingEngine(sampleText);
+
+  // Preload the typing sound effect once and let it loop
+  useEffect(() => {
+    const audio = new Audio('/audio/virtualzero-mechanical-keyboard-typing-hd-372290.mp3');
+    audio.preload = 'auto';
+    audio.loop = true;
+    audio.volume = 0.45;
+    typingAudioRef.current = audio;
+    return () => {
+      audio.pause();
+      typingAudioRef.current = null;
+    };
+  }, []);
+
+  // Mark the sound as active on each new keystroke; idle it after ~1s of no typing.
+  useEffect(() => {
+    const grew = userInput.length > prevInputLengthRef.current;
+    prevInputLengthRef.current = userInput.length;
+    if (!grew || isFinished) return;
+
+    setIsSoundActive(true);
+    if (soundIdleTimerRef.current) clearTimeout(soundIdleTimerRef.current);
+    soundIdleTimerRef.current = setTimeout(() => setIsSoundActive(false), 1000);
+  }, [userInput, isFinished]);
+
+  // Drive playback off the active flag — start when active, pause when idle/finished.
+  useEffect(() => {
+    const audio = typingAudioRef.current;
+    if (!audio) return;
+    if (isSoundActive && settings.soundEffects && !isFinished) {
+      audio.play().catch(() => {});
+    } else {
+      audio.pause();
+    }
+  }, [isSoundActive, settings.soundEffects, isFinished]);
+
+  // Stop the sound the moment the passage is completed.
+  useEffect(() => {
+    if (!isFinished) return;
+    setIsSoundActive(false);
+    if (soundIdleTimerRef.current) {
+      clearTimeout(soundIdleTimerRef.current);
+      soundIdleTimerRef.current = null;
+    }
+    typingAudioRef.current?.pause();
+  }, [isFinished]);
+
+  // Pause the test when the user moves the mouse (typing auto-resumes).
+  useEffect(() => {
+    if (!stats.startTime || isFinished) return;
+    let lastX = -1;
+    let lastY = -1;
+    const handleMouseMove = (e: MouseEvent) => {
+      // Ignore the first event so initial cursor position doesn't trigger a pause.
+      if (lastX === -1) {
+        lastX = e.clientX;
+        lastY = e.clientY;
+        return;
+      }
+      const dx = Math.abs(e.clientX - lastX);
+      const dy = Math.abs(e.clientY - lastY);
+      lastX = e.clientX;
+      lastY = e.clientY;
+      // Only react to non-trivial movements so micro-jitter doesn't pause.
+      if (dx + dy > 4) {
+        pause();
+      }
+    };
+    window.addEventListener('mousemove', handleMouseMove);
+    return () => window.removeEventListener('mousemove', handleMouseMove);
+  }, [stats.startTime, isFinished, pause]);
+
+  // Keep the hidden input focused at all times so the user can just type
+  // without clicking. Re-focus on blur and on tab visibility changes.
+  useEffect(() => {
+    if (isFinished) return;
+    const refocus = () => {
+      if (!isFinished && inputRef.current && document.activeElement !== inputRef.current) {
+        inputRef.current.focus();
+      }
+    };
+    const handleBlur = () => setTimeout(refocus, 0);
+    const handleClick = () => refocus();
+    const handleVisibility = () => { if (!document.hidden) refocus(); };
+    refocus();
+    inputRef.current?.addEventListener('blur', handleBlur);
+    window.addEventListener('click', handleClick);
+    document.addEventListener('visibilitychange', handleVisibility);
+    return () => {
+      inputRef.current?.removeEventListener('blur', handleBlur);
+      window.removeEventListener('click', handleClick);
+      document.removeEventListener('visibilitychange', handleVisibility);
+    };
+  }, [isFinished, isMounted, sampleText]);
 
   // Update difficulty and language when settings change
   useEffect(() => {
@@ -215,13 +315,13 @@ export const TypingTest = () => {
   const getFontSizeClass = () => {
     switch (settings.fontSize) {
       case 'small':
-        return isTyping ? 'text-2xl md:text-3xl' : 'text-xl md:text-2xl';
+        return 'text-xl md:text-2xl';
       case 'medium':
-        return isTyping ? 'text-3xl md:text-4xl' : 'text-2xl md:text-3xl';
+        return 'text-2xl md:text-3xl';
       case 'large':
-        return isTyping ? 'text-4xl md:text-5xl' : 'text-3xl md:text-4xl';
+        return 'text-3xl md:text-4xl';
       default:
-        return isTyping ? 'text-3xl md:text-4xl' : 'text-2xl md:text-3xl';
+        return 'text-2xl md:text-3xl';
     }
   };
 
@@ -229,13 +329,6 @@ export const TypingTest = () => {
 
   return (
     <div className="w-[calc(100%-190px)] mx-auto h-full flex flex-col gap-6 px-2">
-      {/* Fish Icon - Always visible at top */}
-      <div className="flex items-center justify-center">
-        <svg width="48" height="52" viewBox="0 0 20 22" fill="none" xmlns="http://www.w3.org/2000/svg">
-          <path d="M1 12.5L9 1V12.5H1ZM4.825 10.5H7V7.375L4.825 10.5ZM10.5 12.5C10.7 12.0333 10.9167 11.2167 11.15 10.05C11.3833 8.88333 11.5 7.7 11.5 6.5C11.5 5.3 11.3875 4.06667 11.1625 2.8C10.9375 1.53333 10.7167 0.6 10.5 0C11.5167 0.3 12.5292 0.858333 13.5375 1.675C14.5458 2.49167 15.4542 3.46667 16.2625 4.6C17.0708 5.73333 17.7292 6.97917 18.2375 8.3375C18.7458 9.69583 19 11.0833 19 12.5H10.5ZM13.1 10.5H16.8C16.5167 9.21667 16.0542 8.04167 15.4125 6.975C14.7708 5.90833 14.0917 5 13.375 4.25C13.4083 4.6 13.4375 4.9625 13.4625 5.3375C13.4875 5.7125 13.5 6.1 13.5 6.5C13.5 7.28333 13.4625 8.00833 13.3875 8.675C13.3125 9.34167 13.2167 9.95 13.1 10.5ZM7 18C6.4 18 5.84167 17.8583 5.325 17.575C4.80833 17.2917 4.36667 16.9333 4 16.5C3.76667 16.75 3.5125 16.9833 3.2375 17.2C2.9625 17.4167 2.65833 17.5917 2.325 17.725C1.74167 17.2917 1.24583 16.7542 0.8375 16.1125C0.429167 15.4708 0.15 14.7667 0 14H20C19.85 14.7667 19.5708 15.4708 19.1625 16.1125C18.7542 16.7542 18.2583 17.2917 17.675 17.725C17.3417 17.5917 17.0375 17.4167 16.7625 17.2C16.4875 16.9833 16.2333 16.75 16 16.5C15.6167 16.9333 15.1708 17.2917 14.6625 17.575C14.1542 17.8583 13.6 18 13 18C12.4 18 11.8417 17.8583 11.325 17.575C10.8083 17.2917 10.3667 16.9333 10 16.5C9.63333 16.9333 9.19167 17.2917 8.675 17.575C8.15833 17.8583 7.6 18 7 18ZM0 22V20H1C1.53333 20 2.05417 19.9167 2.5625 19.75C3.07083 19.5833 3.55 19.3333 4 19C4.45 19.3333 4.92917 19.5792 5.4375 19.7375C5.94583 19.8958 6.46667 19.975 7 19.975C7.53333 19.975 8.05 19.8958 8.55 19.7375C9.05 19.5792 9.53333 19.3333 10 19C10.45 19.3333 10.9292 19.5792 11.4375 19.7375C11.9458 19.8958 12.4667 19.975 13 19.975C13.5333 19.975 14.05 19.8958 14.55 19.7375C15.05 19.5792 15.5333 19.3333 16 19C16.4667 19.3333 16.95 19.5833 17.45 19.75C17.95 19.9167 18.4667 20 19 20H20V22H19C18.4833 22 17.975 21.9375 17.475 21.8125C16.975 21.6875 16.4833 21.5 16 21.25C15.5167 21.5 15.025 21.6875 14.525 21.8125C14.025 21.9375 13.5167 22 13 22C12.4833 22 11.975 21.9375 11.475 21.8125C10.975 21.6875 10.4833 21.5 10 21.25C9.51667 21.5 9.025 21.6875 8.525 21.8125C8.025 21.9375 7.51667 22 7 22C6.48333 22 5.975 21.9375 5.475 21.8125C4.975 21.6875 4.48333 21.5 4 21.25C3.51667 21.5 3.025 21.6875 2.525 21.8125C2.025 21.9375 1.51667 22 1 22H0Z" fill="#0BAFE7" />
-        </svg>
-      </div>
-
       {/* Controls and Stats Row - Hide when typing */}
       {!isTyping && (
         <div className="w-full mx-auto flex flex-col md:flex-row items-center justify-between gap-6">
@@ -245,20 +338,38 @@ export const TypingTest = () => {
             <div className="flex flex-col gap-2">
               <span className="text-[10px] font-bold text-foreground/40 uppercase tracking-wider text-center">Level</span>
               <div className="flex gap-2">
-                {(['beginner', 'advanced', 'expert'] as Difficulty[]).map((level) => (
-                  <button
-                    key={level}
-                    onClick={() => setDifficulty(level)}
-                    className={cn(
-                      "px-6 py-2.5 text-xs font-bold rounded-lg transition-all duration-75 border",
-                      difficulty === level
-                        ? "bg-primary text-black border-primary shadow-[0_0_12px_rgba(11,175,231,0.4)]"
-                        : "bg-white/5 text-white/60 border-white/10 hover:border-primary/50 hover:text-white/90"
-                    )}
-                  >
-                    {level.charAt(0).toUpperCase() + level.slice(1)}
-                  </button>
-                ))}
+                {(['beginner', 'advanced', 'expert'] as Difficulty[]).map((level) => {
+                  const isActive = difficulty === level;
+                  const isExpert = level === 'expert';
+                  const handleClick = () => {
+                    if (level !== difficulty && level === 'expert') {
+                      toast('Expert mode', {
+                        description: 'Only Expert runs are ranked on the leaderboard.',
+                        icon: '🏆',
+                      });
+                    }
+                    setDifficulty(level);
+                  };
+                  return (
+                    <button
+                      key={level}
+                      onClick={handleClick}
+                      className={cn(
+                        "px-6 py-2.5 text-xs font-bold rounded-lg transition-all duration-75 border",
+                        isActive && isExpert &&
+                          "bg-gradient-to-r from-amber-400 to-yellow-500 text-black border-amber-300 shadow-[0_0_16px_rgba(251,191,36,0.5)]",
+                        isActive && !isExpert &&
+                          "bg-primary text-black border-primary shadow-[0_0_12px_rgba(11,175,231,0.4)]",
+                        !isActive && isExpert &&
+                          "bg-amber-500/5 text-amber-300/80 border-amber-400/30 hover:border-amber-400/70 hover:text-amber-200",
+                        !isActive && !isExpert &&
+                          "bg-white/5 text-white/60 border-white/10 hover:border-primary/50 hover:text-white/90"
+                      )}
+                    >
+                      {level.charAt(0).toUpperCase() + level.slice(1)}
+                    </button>
+                  );
+                })}
               </div>
             </div>
 
@@ -315,35 +426,47 @@ export const TypingTest = () => {
       {/* Main Typing Area */}
       <div className="w-full mx-auto">
         {isGenerating ? (
-          <div className="bg-[#0a1929]/80 backdrop-blur-sm rounded-2xl p-12 md:p-16 min-h-[400px] flex flex-col items-center justify-center relative border border-primary/10">
+          <div className="rounded-2xl px-4 md:px-8 py-4 min-h-[300px] flex flex-col items-center justify-center relative">
             <div className="flex flex-col items-center justify-center gap-4">
               <FaRotateRight className="text-4xl text-primary animate-spin" />
               <p className="text-xl text-foreground/50">Loading passage...</p>
             </div>
           </div>
         ) : isFinished ? (
-          <div className="bg-[#0a1929]/20 backdrop-blur-sm rounded-2xl p-12 md:p-16 min-h-[400px] flex flex-col items-center justify-center relative border border-primary/20">
-            <div className="flex flex-col items-center justify-center gap-8">
-              <h2 className="text-3xl font-bold text-primary">Test Complete!</h2>
-
-              <div className="grid grid-cols-3 gap-8">
-                <div className="flex flex-col items-center">
-                  <span className="text-sm text-foreground/60 mb-2">WPM</span>
-                  <span className="text-5xl font-black text-yellow-500">{stats.wpm}</span>
+          <div className="rounded-2xl px-4 md:px-8 py-6 min-h-[300px] relative">
+            <div className="flex flex-col md:flex-row md:items-stretch gap-8">
+              {/* Left: large WPM + ACC */}
+              <div className="flex md:flex-col gap-8 md:gap-4 md:min-w-[140px] md:pr-4 md:border-r md:border-white/5">
+                <div className="flex flex-col">
+                  <span className="text-xs lowercase tracking-wider text-foreground/50">wpm</span>
+                  <span className="text-6xl md:text-7xl font-light text-yellow-400 leading-none">
+                    {stats.wpm}
+                  </span>
                 </div>
-                <div className="flex flex-col items-center">
-                  <span className="text-sm text-foreground/60 mb-2">Accuracy</span>
-                  <span className="text-5xl font-black text-yellow-500">{stats.accuracy}%</span>
+                <div className="flex flex-col">
+                  <span className="text-xs lowercase tracking-wider text-foreground/50">acc</span>
+                  <span className="text-6xl md:text-7xl font-light text-yellow-400 leading-none">
+                    {stats.accuracy}%
+                  </span>
                 </div>
-                <div className="flex flex-col items-center">
-                  <span className="text-sm text-foreground/60 mb-2">Time</span>
-                  <span className="text-5xl font-black text-yellow-500">{formatTime(timeElapsed)}</span>
+                <div className="flex flex-col">
+                  <span className="text-xs lowercase tracking-wider text-foreground/50">time</span>
+                  <span className="text-2xl font-light text-foreground/80 leading-none">
+                    {formatTime(timeElapsed)}
+                  </span>
                 </div>
               </div>
 
+              {/* Right: chart */}
+              <div className="flex-1 min-w-0">
+                <ResultChart samples={samples} />
+              </div>
+            </div>
+
+            <div className="flex justify-center mt-6">
               <button
                 onClick={handleReset}
-                className="px-8 py-4 bg-primary hover:bg-primary/90 text-black font-bold rounded-lg transition-all text-lg"
+                className="px-8 py-3 bg-primary hover:bg-primary/90 text-black font-bold rounded-lg transition-all"
               >
                 Next
               </button>
@@ -351,44 +474,66 @@ export const TypingTest = () => {
           </div>
         ) : (
           <div
-            className={cn(
-              "bg-[#0a1929]/20 backdrop-blur-sm rounded-2xl p-12 md:p-16 flex items-center justify-center relative group cursor-text border border-primary/10 transition-all duration-500",
-              isTyping ? "min-h-[50vh]" : "min-h-[400px]"
-            )}
+            className="rounded-2xl px-4 md:px-8 py-4 min-h-[300px] flex items-center justify-center relative group cursor-text"
             onClick={() => inputRef.current?.focus()}
           >
             <div className="w-full">
               <div className={cn(
-                "w-full font-normal leading-loose tracking-wide text-foreground/40 select-none whitespace-pre-wrap transition-all duration-500",
+                "w-full font-normal leading-relaxed tracking-wide text-foreground/40 select-none break-words [overflow-wrap:anywhere]",
                 difficulty === 'beginner' ? 'text-center' : 'text-left',
-                getFontClass(),
+                language === 'lao' ? 'font-lao' : getFontClass(),
                 getFontSizeClass()
               )}>
-                {sampleText.split('').map((char, index) => {
-                  const isTyped = index < userInput.length;
-                  const isCorrect = isTyped && userInput[index] === char;
-                  const isCurrent = index === userInput.length;
+                {(() => {
+                  const tokens = sampleText.split(/(\s+|[—–])/);
+                  let charIndex = 0;
+                  return tokens.map((token, tokenIdx) => {
+                    if (!token) return null;
+                    const isBreakable = /^(\s+|[—–])$/.test(token);
+                    const chars = token.split('').map((char) => {
+                      const index = charIndex++;
+                      const isTyped = index < userInput.length;
+                      const isCorrect = isTyped && userInput[index] === char;
+                      const isCurrent = index === userInput.length;
 
-                  return (
-                    <span
-                      key={index}
-                      className={cn(
-                        "transition-all relative inline",
-                        settings.smoothCaret ? "duration-75" : "duration-0",
-                        isTyped && (isCorrect ? "text-primary" : "text-red-400"),
-                        isCurrent && "text-foreground/60"
-                      )}
-                    >
-                      {char}
-                      {isCurrent && (
-                        <div className={cn(
-                          "absolute -bottom-0.5 left-0 w-full h-0.5 bg-primary shadow-[0_0_4px_rgba(11,175,231,0.5)]",
-                          settings.smoothCaret ? "animate-pulse" : ""
-                        )} />
-                      )}
-                    </span>
-                  );
-                })}
+                      return (
+                        <span
+                          key={index}
+                          className={cn(
+                            "transition-all relative inline",
+                            settings.smoothCaret ? "duration-75" : "duration-0",
+                            isTyped && (isCorrect ? "text-primary" : "text-red-400"),
+                            isCurrent && "text-foreground/60"
+                          )}
+                        >
+                          {/* Subtle line behind text the user has already typed */}
+                          {isTyped && (
+                            <span className={cn(
+                              "absolute left-0 right-0 bottom-[0.05em] h-[2px] pointer-events-none",
+                              isCorrect ? "bg-primary/25" : "bg-red-400/30"
+                            )} />
+                          )}
+                          {char}
+                          {isCurrent && (
+                            <span className={cn(
+                              "absolute left-0 top-[0.1em] bottom-[0.1em] w-[2px] bg-primary rounded-full shadow-[0_0_10px_rgba(11,175,231,0.7)]",
+                              settings.smoothCaret ? "animate-pulse" : ""
+                            )} />
+                          )}
+                        </span>
+                      );
+                    });
+
+                    if (isBreakable) {
+                      return <React.Fragment key={`br-${tokenIdx}`}>{chars}</React.Fragment>;
+                    }
+                    return (
+                      <span key={`w-${tokenIdx}`} className="inline-block whitespace-nowrap">
+                        {chars}
+                      </span>
+                    );
+                  });
+                })()}
               </div>
             </div>
 
@@ -404,10 +549,19 @@ export const TypingTest = () => {
             />
           </div>
         )}
+
+        {/* Paused indicator — sits below the passage so it never overlaps the text */}
+        {isPaused && !isFinished && (
+          <div className="flex justify-center mt-4">
+            <div className="px-4 py-2 rounded-md bg-black/60 backdrop-blur-sm border border-white/10 text-xs uppercase tracking-[0.3em] text-foreground/70">
+              Paused — type to resume
+            </div>
+          </div>
+        )}
       </div>
 
-      {/* Action Icons Below Typing Area - Hide when typing */}
-      {!isTyping && (
+      {/* Action Icons Below Typing Area - Hide when actively typing, show when idle or paused */}
+      {(!isTyping || isPaused) && !isFinished && (
         <div className="flex items-center justify-center gap-4">
           <button
             onClick={handleReset}

@@ -39,17 +39,6 @@ export interface Passage {
   updated_at: string;
 }
 
-export interface AiPrompt {
-  id: string;
-  template: string;
-  category: string | null;
-  difficulty: string | null;
-  version: number;
-  is_active: boolean;
-  success_rate: number | null;
-  created_at: string;
-}
-
 export interface PassageHistory {
   id: string;
   user_id: string;
@@ -58,17 +47,4 @@ export interface PassageHistory {
   wpm: number | null;
   accuracy: number | null;
   duration_ms: number | null;
-}
-
-export interface GenerationJob {
-  id: string;
-  status: 'pending' | 'processing' | 'completed' | 'failed';
-  priority: number;
-  language: Language;
-  difficulty: Difficulty | null;
-  length: Length | null;
-  attempts: number;
-  error_message: string | null;
-  created_at: string;
-  processed_at: string | null;
 }

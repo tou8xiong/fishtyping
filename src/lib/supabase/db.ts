@@ -1,5 +1,5 @@
 import { createClient as createSupabaseClient } from "./client";
-import type { Passage, PassageHistory, User, GenerationJob, Difficulty, Length, Language } from "./types";
+import type { Passage, PassageHistory, User, Difficulty, Length, Language } from "./types";
 
 let client: ReturnType<typeof createSupabaseClient> | null = null;
 
@@ -108,67 +108,6 @@ export async function updateUserProfile(userId: string, updates: Partial<Pick<Us
     .from('users')
     .update({ ...updates, updated_at: new Date().toISOString() })
     .eq('id', userId);
-}
-
-export async function createGenerationJob(job: {
-  language?: Language;
-  difficulty?: Difficulty;
-  length?: Length;
-  priority?: number;
-}): Promise<string> {
-  const supabase = getClient();
-  const { data, error } = await supabase
-    .from('generation_jobs')
-    .insert({
-      language: job.language || 'english',
-      difficulty: job.difficulty,
-      length: job.length,
-      priority: job.priority || 0,
-      status: 'pending',
-    })
-    .select('id')
-    .single();
-
-  if (error) throw error;
-  return data?.id;
-}
-
-export async function getPendingGenerationJobs(limit = 10): Promise<GenerationJob[]> {
-  const supabase = getClient();
-  const { data, error } = await supabase
-    .from('generation_jobs')
-    .select('*')
-    .eq('status', 'pending')
-    .order('priority', { ascending: false })
-    .order('created_at', { ascending: true })
-    .limit(limit);
-
-  if (error) return [];
-  return (data || []) as GenerationJob[];
-}
-
-export async function markJobProcessing(jobId: string): Promise<void> {
-  const supabase = getClient();
-  await supabase
-    .from('generation_jobs')
-    .update({ status: 'processing', processed_at: new Date().toISOString() })
-    .eq('id', jobId);
-}
-
-export async function markJobCompleted(jobId: string): Promise<void> {
-  const supabase = getClient();
-  await supabase
-    .from('generation_jobs')
-    .update({ status: 'completed', processed_at: new Date().toISOString() })
-    .eq('id', jobId);
-}
-
-export async function markJobFailed(jobId: string, errorMessage: string): Promise<void> {
-  const supabase = getClient();
-  await supabase
-    .from('generation_jobs')
-    .update({ status: 'failed', error_message: errorMessage, processed_at: new Date().toISOString() })
-    .eq('id', jobId);
 }
 
 export async function saveGeneratedPassage(passage: {

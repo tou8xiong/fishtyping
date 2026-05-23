@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { Crimson_Text, EB_Garamond, JetBrains_Mono } from "next/font/google";
+import { Crimson_Text, EB_Garamond, JetBrains_Mono, Noto_Sans_Lao } from "next/font/google";
 import { Header } from "@/components/Header";
 import { ToastProvider } from "@/components/ToastProvider";
 import { SettingsProvider } from "@/contexts/SettingsContext";
@@ -22,6 +22,12 @@ const jetbrainsMono = JetBrains_Mono({
   subsets: ["latin"],
 });
 
+const notoSansLao = Noto_Sans_Lao({
+  variable: "--font-noto-sans-lao",
+  subsets: ["lao"],
+  weight: ["400", "500", "600", "700"],
+});
+
 export const metadata: Metadata = {
   title: "FishTyping | Master Your Speed",
   description: "A premium typing experience designed for speed and accuracy.",
@@ -36,7 +42,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" className={`${crimsonText.variable} ${ebGaramond.variable} ${jetbrainsMono.variable}`}>
+    <html lang="en" className={`${crimsonText.variable} ${ebGaramond.variable} ${jetbrainsMono.variable} ${notoSansLao.variable}`}>
       <body className="antialiased">
         <SettingsProvider>
           <ToastProvider />

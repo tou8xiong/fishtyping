@@ -27,10 +27,14 @@ const defaultStats: UserStats = {
   totalTimeMinutes: 0,
 };
 
+type StatsLanguage = "all" | "english" | "lao";
+
 export default function ProfilePage() {
   const { user, loading } = useAuth();
   const router = useRouter();
   const [stats, setStats] = useState<UserStats>(defaultStats);
+  const [statsLanguage, setStatsLanguage] = useState<StatsLanguage>("all");
+  const [statsLoading, setStatsLoading] = useState(false);
   const [editing, setEditing] = useState(false);
   const [displayName, setDisplayName] = useState("");
   const [username, setUsername] = useState("");
@@ -52,26 +56,31 @@ export default function ProfilePage() {
       setDisplayName(user.display_name || "");
       setUsername(user.username || "");
       setSelectedAvatar(user.avatar_url || "");
-
-      // Fetch user stats
-      console.log("Fetching stats for user ID:", user.id);
-      fetch(`/api/user-stats?userId=${user.id}`)
-        .then((res) => res.json())
-        .then((data) => {
-          if (!data.error) {
-            setStats({
-              totalSessions: data.totalSessions || 0,
-              totalWordsTyped: data.totalWordsTyped || 0,
-              averageWpm: data.averageWpm || 0,
-              averageAccuracy: data.averageAccuracy || 0,
-              bestWpm: data.bestWpm || 0,
-              totalTimeMinutes: data.totalTimeMinutes || 0,
-            });
-          }
-        })
-        .catch((err) => console.error("Error fetching stats:", err));
     }
   }, [user]);
+
+  useEffect(() => {
+    if (!user) return;
+    const params = new URLSearchParams({ userId: user.id });
+    if (statsLanguage !== "all") params.set("language", statsLanguage);
+    setStatsLoading(true);
+    fetch(`/api/user-stats?${params.toString()}`)
+      .then((res) => res.json())
+      .then((data) => {
+        if (!data.error) {
+          setStats({
+            totalSessions: data.totalSessions || 0,
+            totalWordsTyped: data.totalWordsTyped || 0,
+            averageWpm: data.averageWpm || 0,
+            averageAccuracy: data.averageAccuracy || 0,
+            bestWpm: data.bestWpm || 0,
+            totalTimeMinutes: data.totalTimeMinutes || 0,
+          });
+        }
+      })
+      .catch((err) => console.error("Error fetching stats:", err))
+      .finally(() => setStatsLoading(false));
+  }, [user, statsLanguage]);
 
   const handleSave = async () => {
     if (!user) return;
@@ -317,14 +326,36 @@ export default function ProfilePage() {
         </section>
 
         <section className="glass rounded-xl border border-border/80 px-5 py-6 md:px-7 md:py-7">
-          <div className="space-y-1">
-            <div className="flex items-center gap-3">
-              <LuTrophy className="h-5 w-5 text-primary/80" />
-              <h2 className="text-2xl font-black tracking-tight text-foreground/65">Statistics</h2>
+          <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+            <div className="space-y-1">
+              <div className="flex items-center gap-3">
+                <LuTrophy className="h-5 w-5 text-primary/80" />
+                <h2 className="text-2xl font-black tracking-tight text-foreground/65">Statistics</h2>
+              </div>
+              <p className="text-xs text-foreground/40">Expert runs only{statsLanguage !== "all" ? ` · ${statsLanguage === "english" ? "English" : "Lao"}` : ""}.</p>
+            </div>
+
+            <div className="inline-flex gap-1 rounded-md border border-border/80 bg-white/[0.02] p-1">
+              {(["all", "english", "lao"] as StatsLanguage[]).map((lang) => {
+                const active = statsLanguage === lang;
+                const label = lang === "all" ? "All" : lang === "english" ? "English" : "Lao";
+                return (
+                  <button
+                    key={lang}
+                    onClick={() => setStatsLanguage(lang)}
+                    className={`rounded px-3 py-1.5 text-[11px] font-black uppercase tracking-[0.18em] transition-all ${active
+                      ? "bg-primary/15 text-primary"
+                      : "text-foreground/55 hover:text-foreground"
+                      }`}
+                  >
+                    {label}
+                  </button>
+                );
+              })}
             </div>
           </div>
 
-          <div className="mt-5 grid grid-cols-2 gap-4 md:grid-cols-4">
+          <div className={`mt-5 grid grid-cols-2 gap-4 md:grid-cols-4 ${statsLoading ? "opacity-60" : ""}`}>
             <div className="rounded-lg border border-border/60 bg-white/[0.02] p-4">
               <div className="flex items-center gap-2 text-primary/60">
                 <LuActivity className="h-4 w-4" />

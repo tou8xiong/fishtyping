@@ -118,9 +118,11 @@ Before writing new code, examine existing files in the project to understand:
 
 2. Run tests if available
 
-3. Check for console errors
+3. After debugging complex code changes, run the build (`npm run build`) to ensure no compilation errors
 
-4. Verify the feature works as expected
+4. Check for console errors
+
+5. Verify the feature works as expected
 
 ---
 

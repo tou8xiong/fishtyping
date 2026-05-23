@@ -10,11 +10,31 @@ interface TypingStats {
   endTime: number | null;
 }
 
+export interface TypingSample {
+  second: number;
+  wpm: number;
+  rawWpm: number;
+  errors: number;
+}
+
+// Word count that matches the WPM scoring convention (5 chars = 1 word) for
+// languages without reliable word boundaries (e.g. Lao). For Latin scripts we
+// still use space-delimited word counts since users expect that.
+function countPassageWords(text: string): number {
+  const trimmed = text.trim();
+  if (!trimmed) return 0;
+  const hasLao = /[຀-໿]/.test(trimmed);
+  if (hasLao) {
+    return Math.max(1, Math.round(trimmed.length / 5));
+  }
+  return trimmed.split(/\s+/).filter(Boolean).length;
+}
+
 export const useTypingEngine = (text: string) => {
   const [userInput, setUserInput] = useState('');
 
   // Calculate default WPM based on passage word count
-  const passageWordCount = text.trim().split(/\s+/).length;
+  const passageWordCount = countPassageWords(text);
 
   const [stats, setStats] = useState<TypingStats>({
     wpm: passageWordCount,
@@ -31,6 +51,10 @@ export const useTypingEngine = (text: string) => {
   const lastInputTimeRef = useRef<number>(Date.now());
   const pauseStartTimeRef = useRef<number | null>(null);
   const typingHistoryRef = useRef<Array<{ chars: number; time: number }>>([]);
+  const [samples, setSamples] = useState<TypingSample[]>([]);
+  const lastSampleSecondRef = useRef<number>(0);
+  const lastSampleCharsRef = useRef<number>(0);
+  const lastSampleErrorsRef = useRef<number>(0);
 
   const calculateStats = useCallback((currentInput: string, elapsed: number) => {
     const minutes = elapsed / 60000;
@@ -137,6 +161,16 @@ export const useTypingEngine = (text: string) => {
     }
   };
 
+  // Keep the displayed WPM in sync with the current passage word count
+  // until the user actually starts typing.
+  useEffect(() => {
+    if (userInput.length === 0 && !stats.startTime && !isFinished) {
+      const wordCount = countPassageWords(text);
+      setStats(prev => (prev.wpm === wordCount ? prev : { ...prev, wpm: wordCount }));
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [text]);
+
   // Check for pause (no typing for 2 seconds)
   useEffect(() => {
     if (!stats.startTime || isFinished) return;
@@ -160,6 +194,22 @@ export const useTypingEngine = (text: string) => {
         setTimeElapsed(elapsed);
         const { wpm, accuracy, errors } = calculateStats(userInput, elapsed);
         setStats(prev => ({ ...prev, wpm, accuracy, errors }));
+
+        // Push one sample per crossed second boundary.
+        const second = Math.floor(elapsed / 1000);
+        if (second > lastSampleSecondRef.current) {
+          const charsNow = userInput.length;
+          const charsThisSecond = charsNow - lastSampleCharsRef.current;
+          const errorsThisSecond = Math.max(0, errors - lastSampleErrorsRef.current);
+          const rawWpm = Math.max(0, Math.round((charsThisSecond / 5) * 60));
+          lastSampleSecondRef.current = second;
+          lastSampleCharsRef.current = charsNow;
+          lastSampleErrorsRef.current = errors;
+          setSamples(prev => [
+            ...prev,
+            { second, wpm, rawWpm, errors: errorsThisSecond },
+          ]);
+        }
       }, 500);
       return () => clearInterval(interval);
     }
@@ -167,7 +217,7 @@ export const useTypingEngine = (text: string) => {
 
   const reset = useCallback(() => {
     setUserInput('');
-    const passageWordCount = text.trim().split(/\s+/).length;
+    const passageWordCount = countPassageWords(text);
     setStats({
       wpm: passageWordCount,
       accuracy: 100,
@@ -182,16 +232,31 @@ export const useTypingEngine = (text: string) => {
     pauseStartTimeRef.current = null;
     lastInputTimeRef.current = Date.now();
     typingHistoryRef.current = [];
+    setSamples([]);
+    lastSampleSecondRef.current = 0;
+    lastSampleCharsRef.current = 0;
+    lastSampleErrorsRef.current = 0;
     inputRef.current?.focus();
   }, [text]);
+
+  // Externally-triggered pause (e.g. when the user moves the mouse).
+  // Safe to call repeatedly; only enters the paused state once until input resumes.
+  const pause = useCallback(() => {
+    if (!stats.startTime || isFinished || isPaused) return;
+    pauseStartTimeRef.current = Date.now();
+    setIsPaused(true);
+  }, [stats.startTime, isFinished, isPaused]);
 
   return {
     userInput,
     stats,
+    samples,
     isFinished,
+    isPaused,
     timeElapsed,
     handleInputChange,
     reset,
+    pause,
     inputRef,
   };
 };

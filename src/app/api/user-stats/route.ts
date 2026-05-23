@@ -5,6 +5,7 @@ export async function GET(request: Request) {
   try {
     const { searchParams } = new URL(request.url);
     const userId = searchParams.get("userId");
+    const language = searchParams.get("language"); // 'english' | 'lao' | null
 
     if (!userId) {
       return NextResponse.json({ error: "User ID required" }, { status: 400 });
@@ -12,12 +13,19 @@ export async function GET(request: Request) {
 
     const supabase = await createClient();
 
-    // Fetch passage history for all difficulty levels
-    const { data: history, error } = await supabase
+    // Only Expert-level runs count towards stats (matches leaderboard rule).
+    // Optionally filter by passage language via inner join on passages.
+    let query = supabase
       .from("passage_history")
-      .select("*")
+      .select("*, passages!inner(language)")
       .eq("user_id", userId)
-      .order("attempted_at", { ascending: false });
+      .eq("difficulty", "expert");
+
+    if (language === "english" || language === "lao") {
+      query = query.eq("passages.language", language);
+    }
+
+    const { data: history, error } = await query.order("attempted_at", { ascending: false });
 
     if (error) {
       console.error("Error fetching passage history:", error);
