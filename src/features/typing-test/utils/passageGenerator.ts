@@ -33,7 +33,7 @@ export async function returnPassageToPool(passageId: string): Promise<void> {
 }
 
 export async function trackPassageResult(data: {
-  passageId: string;
+  passageId: string | null;
   difficulty: Difficulty;
   wpm: number;
   accuracy: number;

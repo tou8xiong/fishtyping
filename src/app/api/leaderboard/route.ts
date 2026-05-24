@@ -8,13 +8,16 @@ export async function GET(request: Request) {
 
     const supabase = await createClient();
 
-    // Get best WPM for each user (expert level only)
+    // Get best WPM for each user, expert-level only, with a LEFT join to
+    // passages so we still include runs whose passage row was deleted
+    // (passage_id may be null). passage_history.passage_id -> passages.id FK
+    // makes the embedding resolve.
     const { data: historyData, error: historyError } = await supabase
       .from("passage_history")
-      .select("user_id, wpm, accuracy, attempted_at")
+      .select("user_id, wpm, accuracy, attempted_at, passages(language)")
       .eq("difficulty", "expert")
       .order("wpm", { ascending: false })
-      .limit(limit * 3); // Get more to account for duplicates
+      .limit(limit * 6); // Get more to account for duplicates per user/lang
 
     if (historyError) {
       console.error("Error fetching passage history:", historyError);
@@ -22,7 +25,7 @@ export async function GET(request: Request) {
     }
 
     // Get all unique user IDs
-    const userIds = [...new Set(historyData?.map((entry) => entry.user_id) || [])];
+    const userIds = [...new Set(historyData?.map((entry: any) => entry.user_id) || [])];
 
     // Fetch user details
     const { data: usersData, error: usersError } = await supabase
@@ -38,21 +41,35 @@ export async function GET(request: Request) {
     // Create a map of user details
     const usersMap = new Map(usersData?.map((user) => [user.id, user]) || []);
 
-    // Group by user and get their best score
-    const userBestScores = new Map();
+    // Group by (user, passage language) and keep each user's best score per
+    // language. This lets a single user appear in both English and Lao tabs
+    // with separate best scores.
+    const userBestScores = new Map<string, any>();
 
     historyData?.forEach((entry: any) => {
-      const userId = entry.user_id;
+      const userId: string = entry.user_id;
       const user = usersMap.get(userId);
-      const existing = userBestScores.get(userId);
+      // Prefer the passage's language; fall back to the user's profile
+      // language when the passage row is missing (orphaned passage_id).
+      const passageLanguage: string =
+        entry.passages?.language === "lao"
+          ? "lao"
+          : entry.passages?.language === "english"
+            ? "english"
+            : user?.preferred_language === "lao"
+              ? "lao"
+              : "english";
+      const key = `${userId}::${passageLanguage}`;
+      const existing = userBestScores.get(key);
 
       if (!existing || entry.wpm > existing.wpm) {
-        userBestScores.set(userId, {
+        userBestScores.set(key, {
           userId,
           username: user?.username || user?.display_name || "Anonymous",
           displayName: user?.display_name || user?.username || "Anonymous",
           avatarUrl: user?.avatar_url || null,
           preferredLanguage: user?.preferred_language || "english",
+          passageLanguage,
           wpm: entry.wpm,
           accuracy: entry.accuracy,
           date: entry.attempted_at,
@@ -71,6 +88,7 @@ export async function GET(request: Request) {
         displayName: entry.displayName,
         avatarUrl: entry.avatarUrl,
         preferredLanguage: entry.preferredLanguage,
+        passageLanguage: entry.passageLanguage,
         wpm: entry.wpm,
         accuracy: entry.accuracy,
         date: entry.date,

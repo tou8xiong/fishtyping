@@ -5,6 +5,8 @@ import { useAuth } from "@/hooks/useAuth";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import AdminLayout from "@/components/AdminLayout";
+import AdminBreadcrumb from "@/components/AdminBreadcrumb";
+import TablePagination from "@/components/TablePagination";
 import type { Passage, Language, Difficulty, Length } from "@/lib/supabase/types";
 import { MdAdd, MdClose, MdEdit, MdDelete } from "react-icons/md";
 
@@ -30,6 +32,8 @@ export default function AdminPage() {
   const [showModal, setShowModal] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [passageToDelete, setPassageToDelete] = useState<string | null>(null);
+  const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(10);
   const [formData, setFormData] = useState<PassageFormData>({
     content: "",
     language: "english",
@@ -83,7 +87,10 @@ export default function AdminPage() {
     }
 
     setFilteredPassages(filtered);
+    setPage(1);
   }, [languageFilter, difficultyFilter, passages]);
+
+  const paginatedPassages = filteredPassages.slice((page - 1) * pageSize, page * pageSize);
 
   const handleOpenCreate = () => {
     setFormData({
@@ -186,104 +193,96 @@ export default function AdminPage() {
 
   return (
     <AdminLayout>
-      <div className="py-8 px-4">
+      <div className="py-4 px-4">
         <div className="max-w-7xl mx-auto">
-          <div className="mb-8 flex items-center justify-between">
-            <div>
-              <h1 className="text-4xl font-black uppercase tracking-wider text-white mb-2">
-                Passage Management
-              </h1>
-              <p className="text-foreground/60">Manage all typing passages</p>
-            </div>
-            <button
-              onClick={handleOpenCreate}
-              className="flex items-center gap-2 px-6 py-3 bg-primary text-black font-bold rounded-lg hover:bg-primary/90 transition-all"
-            >
-              <MdAdd className="h-5 w-5" />
-              Create Passage
-            </button>
-          </div>
+          <AdminBreadcrumb items={[{ label: "Admin", href: "/admin" }, { label: "Passages" }]} />
 
           {/* Stats */}
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
-            <div className="bg-white/3 border border-white/10 rounded-lg p-4">
-              <div className="text-xs uppercase tracking-wider text-foreground/50 mb-1">Total Passages</div>
-              <div className="text-2xl font-bold text-primary">{passages.length}</div>
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-2 mb-3">
+            <div className="bg-white/3 border border-white/10 rounded-md px-3 py-2">
+              <div className="text-[10px] uppercase tracking-[0.18em] text-foreground/50">Total</div>
+              <div className="text-lg font-bold text-primary">{passages.length}</div>
             </div>
-            <div className="bg-white/3 border border-white/10 rounded-lg p-4">
-              <div className="text-xs uppercase tracking-wider text-foreground/50 mb-1">English</div>
-              <div className="text-2xl font-bold text-white">{passages.filter(p => p.language === 'english').length}</div>
+            <div className="bg-white/3 border border-white/10 rounded-md px-3 py-2">
+              <div className="text-[10px] uppercase tracking-[0.18em] text-foreground/50">English</div>
+              <div className="text-lg font-bold text-white">{passages.filter(p => p.language === 'english').length}</div>
             </div>
-            <div className="bg-white/3 border border-white/10 rounded-lg p-4">
-              <div className="text-xs uppercase tracking-wider text-foreground/50 mb-1">Lao</div>
-              <div className="text-2xl font-bold text-white">{passages.filter(p => p.language === 'lao').length}</div>
+            <div className="bg-white/3 border border-white/10 rounded-md px-3 py-2">
+              <div className="text-[10px] uppercase tracking-[0.18em] text-foreground/50">Lao</div>
+              <div className="text-lg font-bold text-white">{passages.filter(p => p.language === 'lao').length}</div>
             </div>
-            <div className="bg-white/3 border border-white/10 rounded-lg p-4">
-              <div className="text-xs uppercase tracking-wider text-foreground/50 mb-1">Filtered</div>
-              <div className="text-2xl font-bold text-primary">{filteredPassages.length}</div>
+            <div className="bg-white/3 border border-white/10 rounded-md px-3 py-2">
+              <div className="text-[10px] uppercase tracking-[0.18em] text-foreground/50">Filtered</div>
+              <div className="text-lg font-bold text-primary">{filteredPassages.length}</div>
             </div>
           </div>
 
           {/* Filters */}
-          <div className="bg-white/3 border border-white/10 rounded-lg p-6 mb-6">
-            <div className="flex flex-wrap gap-4">
-              <div>
-                <label className="block text-xs uppercase tracking-wider text-foreground/50 mb-2">Language</label>
-                <div className="flex gap-2">
-                  {languages.map((lang) => (
-                    <button
-                      key={lang}
-                      onClick={() => setLanguageFilter(lang)}
-                      className={`px-4 py-2 rounded-md text-xs font-bold uppercase tracking-wider transition-all ${languageFilter === lang
-                        ? "bg-primary text-black"
-                        : "bg-white/5 text-foreground/60 hover:bg-white/10"
-                        }`}
-                    >
-                      {lang}
-                    </button>
-                  ))}
-                </div>
-              </div>
-
-              <div>
-                <label className="block text-xs uppercase tracking-wider text-foreground/50 mb-2">Difficulty</label>
-                <div className="flex gap-2">
-                  {difficulties.map((diff) => (
-                    <button
-                      key={diff}
-                      onClick={() => setDifficultyFilter(diff)}
-                      className={`px-4 py-2 rounded-md text-xs font-bold uppercase tracking-wider transition-all ${difficultyFilter === diff
-                        ? "bg-primary text-black"
-                        : "bg-white/5 text-foreground/60 hover:bg-white/10"
-                        }`}
-                    >
-                      {diff}
-                    </button>
-                  ))}
-                </div>
+          <div className="bg-white/3 border border-white/10 rounded-md px-3 py-2 mb-3 flex flex-wrap items-center gap-x-4 gap-y-2">
+            <div className="flex items-center gap-1.5">
+              <span className="text-[10px] uppercase tracking-[0.18em] text-foreground/50">Language</span>
+              <div className="flex gap-1">
+                {languages.map((lang) => (
+                  <button
+                    key={lang}
+                    onClick={() => setLanguageFilter(lang)}
+                    className={`px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider transition-all ${languageFilter === lang
+                      ? "bg-primary text-black"
+                      : "bg-white/5 text-foreground/60 hover:bg-white/10"
+                      }`}
+                  >
+                    {lang}
+                  </button>
+                ))}
               </div>
             </div>
+
+            <div className="flex items-center gap-1.5">
+              <span className="text-[10px] uppercase tracking-[0.18em] text-foreground/50">Difficulty</span>
+              <div className="flex gap-1">
+                {difficulties.map((diff) => (
+                  <button
+                    key={diff}
+                    onClick={() => setDifficultyFilter(diff)}
+                    className={`px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider transition-all ${difficultyFilter === diff
+                      ? "bg-primary text-black"
+                      : "bg-white/5 text-foreground/60 hover:bg-white/10"
+                      }`}
+                  >
+                    {diff}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <button
+              onClick={handleOpenCreate}
+              className="ml-auto flex items-center gap-1 px-3 py-1.5 bg-primary text-black text-xs font-bold uppercase tracking-wider rounded hover:bg-primary/90 transition-all"
+            >
+              <MdAdd className="h-4 w-4" />
+              New Passage
+            </button>
           </div>
 
           {/* Passages Table */}
           <div className="bg-white/3 border border-white/10 rounded-lg overflow-hidden">
-            <div className="overflow-x-auto max-h-[600px] overflow-y-auto">
+            <div className="overflow-x-auto">
               <table className="w-full text-sm">
-                <thead className="sticky top-0 bg-[#1e1e1e] border-b border-white/10">
+                <thead className="bg-[#1e1e1e] border-b border-white/10">
                   <tr>
-                    <th className="text-left py-4 px-4 text-xs uppercase tracking-wider text-foreground/50 font-black">ID</th>
-                    <th className="text-left py-4 px-4 text-xs uppercase tracking-wider text-foreground/50 font-black">Language</th>
-                    <th className="text-left py-4 px-4 text-xs uppercase tracking-wider text-foreground/50 font-black">Difficulty</th>
-                    <th className="text-left py-4 px-4 text-xs uppercase tracking-wider text-foreground/50 font-black">Length</th>
-                    <th className="text-left py-4 px-4 text-xs uppercase tracking-wider text-foreground/50 font-black">Words</th>
-                    <th className="text-left py-4 px-4 text-xs uppercase tracking-wider text-foreground/50 font-black">Status</th>
-                    <th className="text-left py-4 px-4 text-xs uppercase tracking-wider text-foreground/50 font-black">Used</th>
-                    <th className="text-left py-4 px-4 text-xs uppercase tracking-wider text-foreground/50 font-black">Content</th>
-                    <th className="text-right py-4 px-4 text-xs uppercase tracking-wider text-foreground/50 font-black">Actions</th>
+                    <th className="text-left py-3 px-4 text-xs uppercase tracking-wider text-foreground/50 font-black">ID</th>
+                    <th className="text-left py-3 px-4 text-xs uppercase tracking-wider text-foreground/50 font-black">Language</th>
+                    <th className="text-left py-3 px-4 text-xs uppercase tracking-wider text-foreground/50 font-black">Difficulty</th>
+                    <th className="text-left py-3 px-4 text-xs uppercase tracking-wider text-foreground/50 font-black">Length</th>
+                    <th className="text-left py-3 px-4 text-xs uppercase tracking-wider text-foreground/50 font-black">Words</th>
+                    <th className="text-left py-3 px-4 text-xs uppercase tracking-wider text-foreground/50 font-black">Status</th>
+                    <th className="text-left py-3 px-4 text-xs uppercase tracking-wider text-foreground/50 font-black">Used</th>
+                    <th className="text-left py-3 px-4 text-xs uppercase tracking-wider text-foreground/50 font-black">Content</th>
+                    <th className="text-right py-3 px-4 text-xs uppercase tracking-wider text-foreground/50 font-black">Actions</th>
                   </tr>
                 </thead>
                 <tbody>
-                  {filteredPassages.map((passage) => (
+                  {paginatedPassages.map((passage) => (
                     <tr
                       key={passage.id}
                       onClick={() => router.push(`/admin/passages/${passage.id}`)}
@@ -331,6 +330,13 @@ export default function AdminPage() {
                 </tbody>
               </table>
             </div>
+            <TablePagination
+              page={page}
+              pageSize={pageSize}
+              totalRows={filteredPassages.length}
+              onPageChange={setPage}
+              onPageSizeChange={(size) => { setPageSize(size); setPage(1); }}
+            />
           </div>
 
           {/* Create Modal */}

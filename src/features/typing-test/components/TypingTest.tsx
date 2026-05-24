@@ -172,30 +172,10 @@ export const TypingTest = () => {
     inputRef.current?.focus();
   }, []);
 
-  // Save results when typing is finished
-  useEffect(() => {
-    if (!isFinished) return;
-
-    // Skip saving for beginner/letters phase (no passageId)
-    if (difficulty === 'beginner' && beginnerPhase === 'letters') return;
-
-    if (!currentPassageId) {
-      console.warn('Cannot save result: no passageId (using default passage)');
-      return;
-    }
-
-    if (stats.wpm < 0) return;
-
-    console.log('Saving passage result:', { passageId: currentPassageId, difficulty, wpm: stats.wpm, accuracy: stats.accuracy, userId: user?.id });
-    trackPassageResult({
-      passageId: currentPassageId,
-      difficulty: difficulty,
-      wpm: stats.wpm,
-      accuracy: stats.accuracy,
-      durationMs: timeElapsed,
-      userId: user?.id || '',
-    }).catch(err => console.error('Failed to save result:', err));
-  }, [isFinished, currentPassageId, stats.wpm, stats.accuracy, timeElapsed, difficulty, beginnerPhase, userInput, sampleText]);
+  // Saving is deferred to the "Next" button on the completion screen — see
+  // handleNext below. This avoids saving partial results when the user resets
+  // mid-test, and lets the run be recorded for every difficulty (including
+  // beginner/letters, which has a null passage_id).
 
   // Track beginner progress
   useEffect(() => {
@@ -258,6 +238,28 @@ export const TypingTest = () => {
     reset();
     await loadNewPassage();
   }, [reset, loadNewPassage]);
+
+  // Called by the "Next" button on the completion screen. Persists the run
+  // for every difficulty (passage_id may be null for fallback/letters runs)
+  // and then advances to a fresh passage.
+  const handleNext = useCallback(async () => {
+    if (isFinished && stats.wpm >= 0 && user?.id) {
+      try {
+        await trackPassageResult({
+          passageId: currentPassageId,
+          difficulty,
+          wpm: stats.wpm,
+          accuracy: stats.accuracy,
+          durationMs: timeElapsed,
+          userId: user.id,
+        });
+      } catch (err) {
+        console.error('Failed to save result:', err);
+        toast.error('Failed to save your result');
+      }
+    }
+    await handleReset();
+  }, [isFinished, stats.wpm, stats.accuracy, timeElapsed, currentPassageId, difficulty, user?.id, handleReset]);
 
   // Load initial passage on mount and when settings change
   useEffect(() => {
@@ -465,7 +467,7 @@ export const TypingTest = () => {
 
             <div className="flex justify-center mt-6">
               <button
-                onClick={handleReset}
+                onClick={handleNext}
                 className="px-8 py-3 bg-primary hover:bg-primary/90 text-black font-bold rounded-lg transition-all"
               >
                 Next

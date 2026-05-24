@@ -9,6 +9,7 @@ interface LeaderboardEntry {
   displayName: string;
   avatarUrl?: string;
   preferredLanguage?: string;
+  passageLanguage?: string;
   wpm: number;
   accuracy: number;
   date: string;
@@ -50,9 +51,10 @@ export default function LeaderboardPage() {
       filtered = data.filter((entry) => new Date(entry.date) >= weekAgo);
     }
 
-    // Filter by language (always applied)
+    // Filter by the passage's language (the typing language of the run),
+    // not the user's profile language.
     const langFilter = activeLanguage.toLowerCase();
-    filtered = filtered.filter((entry) => entry.preferredLanguage === langFilter);
+    filtered = filtered.filter((entry) => entry.passageLanguage === langFilter);
 
     // Re-rank after filtering
     return filtered.map((entry, index) => ({
@@ -140,13 +142,18 @@ export default function LeaderboardPage() {
         <div className="glass rounded-xl px-5 py-6 md:px-8 md:py-8">
           <div className="flex flex-col gap-8 lg:flex-row lg:items-start lg:justify-between">
             <div className="space-y-3">
-              <p className="text-[11px] font-black uppercase tracking-[0.35em] text-primary/70">Leaderboard</p>
+              <div className="flex items-center gap-2">
+                <p className="text-[11px] font-black uppercase tracking-[0.35em] text-primary/70">Leaderboard</p>
+                <span className="inline-flex items-center rounded-full border border-amber-300/50 bg-gradient-to-r from-amber-400/20 to-yellow-500/20 px-2.5 py-0.5 text-[10px] font-black uppercase tracking-[0.25em] text-amber-300">
+                  Expert tier
+                </span>
+              </div>
               <div className="space-y-2">
                 <h1 className="text-4xl font-black uppercase tracking-tight text-primary drop-shadow-[0_0_18px_rgba(11,175,231,0.25)] md:text-6xl">
                   Global Rankings
                 </h1>
                 <p className="max-w-xl text-base text-foreground/70 md:text-lg">
-                  The fastest fingers in the deep sea.
+                  The fastest fingers in the deep sea — Expert runs only.
                 </p>
               </div>
             </div>

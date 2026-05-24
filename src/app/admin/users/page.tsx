@@ -4,6 +4,8 @@ import { useState, useEffect } from "react";
 import { useAuth } from "@/hooks/useAuth";
 import { useRouter } from "next/navigation";
 import AdminLayout from "@/components/AdminLayout";
+import AdminBreadcrumb from "@/components/AdminBreadcrumb";
+import TablePagination from "@/components/TablePagination";
 import type { User } from "@/lib/supabase/types";
 import { MdAdd, MdClose, MdEdit, MdDelete } from "react-icons/md";
 
@@ -30,6 +32,8 @@ export default function AdminUsersPage() {
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [userToDelete, setUserToDelete] = useState<string | null>(null);
   const [editingUser, setEditingUser] = useState<User | null>(null);
+  const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(10);
   const [formData, setFormData] = useState<UserFormData>({
     id: "",
     username: "",
@@ -90,7 +94,10 @@ export default function AdminUsersPage() {
     }
 
     setFilteredUsers(filtered);
+    setPage(1);
   }, [searchQuery, languageFilter, users]);
+
+  const paginatedUsers = filteredUsers.slice((page - 1) * pageSize, page * pageSize);
 
   const handleOpenCreate = () => {
     setEditingUser(null);
@@ -200,115 +207,100 @@ export default function AdminUsersPage() {
 
   return (
     <AdminLayout>
-      <div className="py-8 px-4">
+      <div className="py-4 px-4">
         <div className="max-w-7xl mx-auto">
-          <div className="mb-8 flex items-center justify-between">
-            <div>
-              <h1 className="text-4xl font-black uppercase tracking-wider text-white mb-2">
-                User Management
-              </h1>
-              <p className="text-foreground/60">Manage all registered users</p>
-            </div>
-            <button
-              onClick={handleOpenCreate}
-              className="flex items-center gap-2 px-6 py-3 bg-primary text-black font-bold rounded-lg hover:bg-primary/90 transition-all"
-            >
-              <MdAdd className="h-5 w-5" />
-              Create User
-            </button>
-          </div>
+          <AdminBreadcrumb items={[{ label: "Admin", href: "/admin" }, { label: "Users" }]} />
 
           {/* Stats */}
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
-            <div className="bg-white/3 border border-white/10 rounded-lg p-4">
-              <div className="text-xs uppercase tracking-wider text-foreground/50 mb-1">Total Users</div>
-              <div className="text-2xl font-bold text-primary">{users.length}</div>
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-2 mb-3">
+            <div className="bg-white/3 border border-white/10 rounded-md px-3 py-2">
+              <div className="text-[10px] uppercase tracking-[0.18em] text-foreground/50">Total</div>
+              <div className="text-lg font-bold text-primary">{users.length}</div>
             </div>
-            <div className="bg-white/3 border border-white/10 rounded-lg p-4">
-              <div className="text-xs uppercase tracking-wider text-foreground/50 mb-1">English</div>
-              <div className="text-2xl font-bold text-white">
+            <div className="bg-white/3 border border-white/10 rounded-md px-3 py-2">
+              <div className="text-[10px] uppercase tracking-[0.18em] text-foreground/50">English</div>
+              <div className="text-lg font-bold text-white">
                 {users.filter((u) => u.preferred_language === "english").length}
               </div>
             </div>
-            <div className="bg-white/3 border border-white/10 rounded-lg p-4">
-              <div className="text-xs uppercase tracking-wider text-foreground/50 mb-1">Lao</div>
-              <div className="text-2xl font-bold text-white">
+            <div className="bg-white/3 border border-white/10 rounded-md px-3 py-2">
+              <div className="text-[10px] uppercase tracking-[0.18em] text-foreground/50">Lao</div>
+              <div className="text-lg font-bold text-white">
                 {users.filter((u) => u.preferred_language === "lao").length}
               </div>
             </div>
-            <div className="bg-white/3 border border-white/10 rounded-lg p-4">
-              <div className="text-xs uppercase tracking-wider text-foreground/50 mb-1">Filtered</div>
-              <div className="text-2xl font-bold text-primary">{filteredUsers.length}</div>
+            <div className="bg-white/3 border border-white/10 rounded-md px-3 py-2">
+              <div className="text-[10px] uppercase tracking-[0.18em] text-foreground/50">Filtered</div>
+              <div className="text-lg font-bold text-primary">{filteredUsers.length}</div>
             </div>
           </div>
 
           {/* Filters */}
-          <div className="bg-white/3 border border-white/10 rounded-lg p-6 mb-6">
-            <div className="flex flex-wrap gap-4">
-              <div className="flex-1 min-w-[200px]">
-                <label className="block text-xs uppercase tracking-wider text-foreground/50 mb-2">
-                  Search
-                </label>
-                <input
-                  type="text"
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  placeholder="Search by username, name, or ID..."
-                  className="w-full px-4 py-2 bg-white/5 border border-white/10 rounded-lg text-white text-sm placeholder-foreground/40 focus:border-primary focus:outline-none"
-                />
-              </div>
+          <div className="bg-white/3 border border-white/10 rounded-md px-3 py-2 mb-3 flex flex-wrap items-center gap-x-3 gap-y-2">
+            <input
+              type="text"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              placeholder="Search by username, name, or ID..."
+              className="flex-1 min-w-[200px] px-2.5 py-1 bg-white/5 border border-white/10 rounded text-white text-xs placeholder-foreground/40 focus:border-primary focus:outline-none"
+            />
 
-              <div>
-                <label className="block text-xs uppercase tracking-wider text-foreground/50 mb-2">
-                  Language
-                </label>
-                <div className="flex gap-2">
-                  {languages.map((lang) => (
-                    <button
-                      key={lang}
-                      onClick={() => setLanguageFilter(lang)}
-                      className={`px-4 py-2 rounded-md text-xs font-bold uppercase tracking-wider transition-all ${
-                        languageFilter === lang
-                          ? "bg-primary text-black"
-                          : "bg-white/5 text-foreground/60 hover:bg-white/10"
-                      }`}
-                    >
-                      {lang}
-                    </button>
-                  ))}
-                </div>
+            <div className="flex items-center gap-1.5">
+              <span className="text-[10px] uppercase tracking-[0.18em] text-foreground/50">Language</span>
+              <div className="flex gap-1">
+                {languages.map((lang) => (
+                  <button
+                    key={lang}
+                    onClick={() => setLanguageFilter(lang)}
+                    className={`px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider transition-all ${
+                      languageFilter === lang
+                        ? "bg-primary text-black"
+                        : "bg-white/5 text-foreground/60 hover:bg-white/10"
+                    }`}
+                  >
+                    {lang}
+                  </button>
+                ))}
               </div>
             </div>
+
+            <button
+              onClick={handleOpenCreate}
+              className="ml-auto flex items-center gap-1 px-3 py-1.5 bg-primary text-black text-xs font-bold uppercase tracking-wider rounded hover:bg-primary/90 transition-all"
+            >
+              <MdAdd className="h-4 w-4" />
+              New User
+            </button>
           </div>
 
           {/* Users Table */}
           <div className="bg-white/3 border border-white/10 rounded-lg overflow-hidden">
-            <div className="overflow-x-auto max-h-[600px] overflow-y-auto">
+            <div className="overflow-x-auto">
               <table className="w-full text-sm">
-                <thead className="sticky top-0 bg-[#1e1e1e] border-b border-white/10">
+                <thead className="bg-[#1e1e1e] border-b border-white/10">
                   <tr>
-                    <th className="text-left py-4 px-4 text-xs uppercase tracking-wider text-foreground/50 font-black">
+                    <th className="text-left py-3 px-4 text-xs uppercase tracking-wider text-foreground/50 font-black">
                       ID
                     </th>
-                    <th className="text-left py-4 px-4 text-xs uppercase tracking-wider text-foreground/50 font-black">
+                    <th className="text-left py-3 px-4 text-xs uppercase tracking-wider text-foreground/50 font-black">
                       Username
                     </th>
-                    <th className="text-left py-4 px-4 text-xs uppercase tracking-wider text-foreground/50 font-black">
+                    <th className="text-left py-3 px-4 text-xs uppercase tracking-wider text-foreground/50 font-black">
                       Display Name
                     </th>
-                    <th className="text-left py-4 px-4 text-xs uppercase tracking-wider text-foreground/50 font-black">
+                    <th className="text-left py-3 px-4 text-xs uppercase tracking-wider text-foreground/50 font-black">
                       Language
                     </th>
-                    <th className="text-left py-4 px-4 text-xs uppercase tracking-wider text-foreground/50 font-black">
+                    <th className="text-left py-3 px-4 text-xs uppercase tracking-wider text-foreground/50 font-black">
                       Created At
                     </th>
-                    <th className="text-right py-4 px-4 text-xs uppercase tracking-wider text-foreground/50 font-black">
+                    <th className="text-right py-3 px-4 text-xs uppercase tracking-wider text-foreground/50 font-black">
                       Actions
                     </th>
                   </tr>
                 </thead>
                 <tbody>
-                  {filteredUsers.map((user) => (
+                  {paginatedUsers.map((user) => (
                     <tr
                       key={user.id}
                       className="border-b border-white/5 hover:bg-white/5 transition-colors"
@@ -353,6 +345,13 @@ export default function AdminUsersPage() {
                 </tbody>
               </table>
             </div>
+            <TablePagination
+              page={page}
+              pageSize={pageSize}
+              totalRows={filteredUsers.length}
+              onPageChange={setPage}
+              onPageSizeChange={(size) => { setPageSize(size); setPage(1); }}
+            />
           </div>
 
           {/* Create/Edit Modal */}

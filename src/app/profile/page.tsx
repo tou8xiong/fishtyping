@@ -332,7 +332,7 @@ export default function ProfilePage() {
                 <LuTrophy className="h-5 w-5 text-primary/80" />
                 <h2 className="text-2xl font-black tracking-tight text-foreground/65">Statistics</h2>
               </div>
-              <p className="text-xs text-foreground/40">Expert runs only{statsLanguage !== "all" ? ` · ${statsLanguage === "english" ? "English" : "Lao"}` : ""}.</p>
+              <p className="text-xs text-foreground/40">All difficulty levels{statsLanguage !== "all" ? ` · ${statsLanguage === "english" ? "English" : "Lao"}` : ""}.</p>
             </div>
 
             <div className="inline-flex gap-1 rounded-md border border-border/80 bg-white/[0.02] p-1">

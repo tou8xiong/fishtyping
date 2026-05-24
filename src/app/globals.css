@@ -31,13 +31,16 @@
   --neutral-text: #72787c;
 }
 
-@media (prefers-color-scheme: light) {
-  :root {
-    --background: #121212;
-    --foreground: #f8fafc;
-    --card: rgba(30, 30, 30, 0.6);
-    --border: rgba(60, 60, 60, 0.5);
-  }
+/* Native <select> dropdown options inherit OS chrome by default, which makes
+   white-on-white text invisible against translucent dark selects. Force a
+   readable surface for the option list in both themes. */
+select option {
+  background-color: #1e1e1e;
+  color: #f8fafc;
+}
+.light select option {
+  background-color: #ffffff;
+  color: #0f172a;
 }
 
 
@@ -80,15 +83,75 @@ body {
 
 /* Light Theme */
 .light {
-  --background: #ffffff;
+  --background: #f8fafc;
   --foreground: #0f172a;
   --card: rgba(255, 255, 255, 0.8);
-  --border: rgba(203, 213, 225, 0.5);
+  --border: rgba(203, 213, 225, 0.7);
 }
 
 .light .glass {
-  background: rgba(255, 255, 255, 0.7);
-  border: 1px solid rgba(203, 213, 225, 0.5);
+  background: rgba(255, 255, 255, 0.75);
+  border: 1px solid rgba(203, 213, 225, 0.6);
+}
+
+/* Light-mode overrides for hardcoded dark surfaces used across the app
+   (admin pages especially: bg-[#1e1e1e], bg-white/3..20, text-white,
+   border-white/5..20, etc. don't respond to CSS variables). */
+.light .bg-\[\#1e1e1e\] {
+  background-color: #f1f5f9 !important;
+}
+.light .bg-\[\#121212\] {
+  background-color: #ffffff !important;
+}
+.light .bg-\[\#0a1929\] {
+  background-color: #e2e8f0 !important;
+}
+/* Force every white-on-dark and muted-grey text utility to solid black in
+   light mode. Covers text-white, text-white/40, text-foreground, all
+   text-foreground/* opacity variants, plus hover:/group-hover: modifiers. */
+.light [class*="text-white"],
+.light [class*="text-foreground"],
+.light .text-gray {
+  color: #0f172a !important;
+}
+/* text-black stays black — it's used for CTA buttons on colored backgrounds
+   (bg-primary cyan, bg-amber-* gold) where black is readable in both themes. */
+.light .bg-white\/2,
+.light .bg-white\/3,
+.light .bg-white\/\[0\.02\],
+.light .bg-white\/\[0\.03\] {
+  background-color: rgba(15, 23, 42, 0.04) !important;
+}
+.light .bg-white\/5,
+.light .bg-white\/\[0\.05\] {
+  background-color: rgba(15, 23, 42, 0.06) !important;
+}
+.light .bg-white\/10 {
+  background-color: rgba(15, 23, 42, 0.1) !important;
+}
+.light .bg-white\/20 {
+  background-color: rgba(15, 23, 42, 0.14) !important;
+}
+.light .border-white\/5,
+.light .border-white\/8,
+.light .border-white\/10,
+.light .border-white\/20 {
+  border-color: rgba(15, 23, 42, 0.14) !important;
+}
+.light .bg-black\/60,
+.light .bg-black\/80 {
+  background-color: rgba(15, 23, 42, 0.55) !important;
+}
+
+/* Inputs need a readable surface in light mode (currently bg-white/5 text-white). */
+.light input,
+.light textarea,
+.light select {
+  color: #0f172a;
+}
+.light input::placeholder,
+.light textarea::placeholder {
+  color: rgba(15, 23, 42, 0.45);
 }
 
 /* Glassmorphism */

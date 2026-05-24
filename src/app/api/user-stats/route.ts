@@ -13,19 +13,28 @@ export async function GET(request: Request) {
 
     const supabase = await createClient();
 
-    // Only Expert-level runs count towards stats (matches leaderboard rule).
-    // Optionally filter by passage language via inner join on passages.
+    // Profile stats include runs at every difficulty (beginner/advanced/expert).
+    // For "All" we want every row, including those with a null/orphaned
+    // passage_id. For an English/Lao filter we inner-join passages and
+    // constrain by language — rows without a matching passage are skipped.
+    const wantsLanguage = language === "english" || language === "lao";
+
+    const selectClause = wantsLanguage ? "*, passages!inner(language)" : "*";
     let query = supabase
       .from("passage_history")
-      .select("*, passages!inner(language)")
-      .eq("user_id", userId)
-      .eq("difficulty", "expert");
+      .select(selectClause)
+      .eq("user_id", userId);
 
-    if (language === "english" || language === "lao") {
-      query = query.eq("passages.language", language);
+    if (wantsLanguage) {
+      query = query.eq("passages.language", language!);
     }
 
-    const { data: history, error } = await query.order("attempted_at", { ascending: false });
+    const { data: rawHistory, error } = await query.order("attempted_at", { ascending: false });
+    const history = (rawHistory as unknown as Array<{
+      wpm: number | null;
+      accuracy: number | null;
+      duration_ms: number | null;
+    }> | null) || [];
 
     if (error) {
       console.error("Error fetching passage history:", error);
@@ -33,8 +42,8 @@ export async function GET(request: Request) {
     }
 
     // Calculate stats
-    const totalSessions = history?.length || 0;
-    const validSessions = history?.filter((h) => h.wpm && h.accuracy) || [];
+    const totalSessions = history.length;
+    const validSessions = history.filter((h) => h.wpm && h.accuracy);
 
     const totalWpm = validSessions.reduce((sum, h) => sum + (h.wpm || 0), 0);
     const totalAccuracy = validSessions.reduce((sum, h) => sum + (h.accuracy || 0), 0);
@@ -58,7 +67,7 @@ export async function GET(request: Request) {
       averageAccuracy,
       bestWpm,
       totalTimeMinutes,
-      recentHistory: history?.slice(0, 10) || [],
+      recentHistory: history.slice(0, 10),
     });
   } catch (error: any) {
     console.error("Error in user stats API:", error);
