@@ -196,6 +196,7 @@ function LoginPageInner() {
               <LuArrowRight className="h-4 w-4" />
             </button>
           </form>
+          )}{/* end reset/form toggle */}
 
           <div className="my-6 flex items-center gap-3">
             <div className="h-px flex-1 bg-border" />
