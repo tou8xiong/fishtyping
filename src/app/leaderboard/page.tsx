@@ -1,6 +1,8 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useAuth } from "@/hooks/useAuth";
+import { LuShare2, LuCheck } from "react-icons/lu";
 
 interface LeaderboardEntry {
   rank: number;
@@ -27,10 +29,12 @@ function getSpeedTier(wpm: number) {
 }
 
 export default function LeaderboardPage() {
+  const { user } = useAuth();
   const [leaderboard, setLeaderboard] = useState<LeaderboardEntry[]>([]);
   const [loading, setLoading] = useState(true);
   const [activeFilter, setActiveFilter] = useState<string>("All Time");
   const [activeLanguage, setActiveLanguage] = useState<string>("English");
+  const [copied, setCopied] = useState(false);
 
   useEffect(() => {
     fetch("/api/leaderboard")
@@ -79,6 +83,21 @@ export default function LeaderboardPage() {
     { entry: topThree[0] || null, pos: 1 },
     { entry: topThree[2] || null, pos: 3 },
   ];
+
+  const myEntry = user ? filteredLeaderboard.find((e) => e.userId === user.id) : null;
+
+  const handleShare = async () => {
+    if (!myEntry) return;
+    const lang = activeLanguage.toLowerCase();
+    const url = `${window.location.origin}/rank/${myEntry.userId}?lang=${lang}`;
+    try {
+      await navigator.clipboard.writeText(url);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2500);
+    } catch {
+      window.prompt("Copy your rank link:", url);
+    }
+  };
 
   const podiumConfig = {
     1: {
@@ -160,21 +179,41 @@ export default function LeaderboardPage() {
               )}
             </div>
 
-            {/* Time filters */}
-            <div className="flex gap-1.5">
-              {filters.map((f) => (
+            {/* Time filters + Share */}
+            <div className="flex items-center gap-2">
+              <div className="flex gap-1.5">
+                {filters.map((f) => (
+                  <button
+                    key={f}
+                    onClick={() => setActiveFilter(f)}
+                    className={`rounded-lg border px-4 py-2 text-[10px] font-black uppercase tracking-[0.2em] transition-all ${
+                      activeFilter === f
+                        ? "border-primary bg-primary/15 text-primary"
+                        : "border-white/8 bg-white/3 text-foreground/45 hover:border-white/15 hover:text-foreground/70"
+                    }`}
+                  >
+                    {f}
+                  </button>
+                ))}
+              </div>
+
+              {myEntry && (
                 <button
-                  key={f}
-                  onClick={() => setActiveFilter(f)}
-                  className={`rounded-lg border px-4 py-2 text-[10px] font-black uppercase tracking-[0.2em] transition-all ${
-                    activeFilter === f
-                      ? "border-primary bg-primary/15 text-primary"
-                      : "border-white/8 bg-white/3 text-foreground/45 hover:border-white/15 hover:text-foreground/70"
+                  onClick={handleShare}
+                  className={`flex items-center gap-2 rounded-lg border px-4 py-2 text-[10px] font-black uppercase tracking-[0.2em] transition-all ${
+                    copied
+                      ? "border-green-400/50 bg-green-500/10 text-green-400"
+                      : "border-primary/40 bg-primary/10 text-primary hover:border-primary hover:bg-primary/20"
                   }`}
+                  title="Share your rank"
                 >
-                  {f}
+                  {copied ? (
+                    <><LuCheck className="h-3.5 w-3.5" /> Copied!</>
+                  ) : (
+                    <><LuShare2 className="h-3.5 w-3.5" /> Share Rank</>
+                  )}
                 </button>
-              ))}
+              )}
             </div>
           </div>
 
