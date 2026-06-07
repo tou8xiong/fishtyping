@@ -4,9 +4,8 @@ import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { Suspense, useMemo, useState } from "react";
 import { LuArrowRight, LuCircleUserRound } from "react-icons/lu";
-import { FaGithub } from "react-icons/fa";
 import { auth } from "@/lib/firebase/config";
-import { signInWithEmailAndPassword, signInWithPopup, GoogleAuthProvider, GithubAuthProvider, sendPasswordResetEmail } from "firebase/auth";
+import { signInWithEmailAndPassword, signInWithPopup, GoogleAuthProvider, sendPasswordResetEmail } from "firebase/auth";
 import { createUserProfile } from "./actions";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
@@ -66,26 +65,20 @@ function LoginPageInner() {
     }
   };
 
-  const handleOAuth = async (provider: "google" | "github") => {
+  const handleGoogleSignIn = async () => {
     setLoading(true);
     setError("");
 
     try {
-      const authProvider = provider === "google" ? new GoogleAuthProvider() : new GithubAuthProvider();
-      const userCredential = await signInWithPopup(auth, authProvider);
+      const userCredential = await signInWithPopup(auth, new GoogleAuthProvider());
       await createUserProfile(userCredential.user.uid, userCredential.user.email, userCredential.user.displayName);
       toast.success("Signed in successfully");
       router.push("/");
     } catch (err: any) {
       const code = err?.code || "";
-      let msg = err.message || "Failed to sign in";
-      if (code === "auth/operation-not-allowed") {
-        msg = "GitHub sign-in is not enabled yet. Please enable it in Firebase Console → Authentication → Sign-in method.";
-      } else if (code === "auth/popup-closed-by-user") {
-        msg = "Sign-in popup was closed. Please try again.";
-      } else if (code === "auth/account-exists-with-different-credential") {
-        msg = "An account already exists with the same email. Try signing in with a different method.";
-      }
+      const msg = code === "auth/popup-closed-by-user"
+        ? "Sign-in popup was closed. Please try again."
+        : err.message || "Failed to sign in with Google";
       setError(msg);
       toast.error(msg);
       setLoading(false);
@@ -204,22 +197,14 @@ function LoginPageInner() {
             <div className="h-px flex-1 bg-border" />
           </div>
 
-          <div className="space-y-2.5">
+          <div>
             <button
-              onClick={() => handleOAuth("google")}
+              onClick={handleGoogleSignIn}
               disabled={loading}
               className="flex w-full items-center justify-center gap-2 rounded-sm border border-border bg-transparent px-4 py-3 text-sm text-foreground/80 transition-colors hover:border-primary/35 hover:text-foreground disabled:opacity-50"
             >
               <LuCircleUserRound className="h-4 w-4" />
               Continue with Google
-            </button>
-            <button
-              onClick={() => handleOAuth("github")}
-              disabled={loading}
-              className="flex w-full items-center justify-center gap-2 rounded-sm border border-white/15 bg-[#24292e] px-4 py-3 text-sm font-semibold text-white transition-all hover:bg-[#2f3640] disabled:opacity-50"
-            >
-              <FaGithub className="h-4 w-4" />
-              Continue with GitHub
             </button>
           </div>
 

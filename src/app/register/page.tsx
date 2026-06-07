@@ -3,9 +3,8 @@
 import Link from "next/link";
 import { useState } from "react";
 import { LuLock, LuMail, LuUserRound, LuUserRoundPlus } from "react-icons/lu";
-import { FaGithub } from "react-icons/fa";
 import { auth } from "@/lib/firebase/config";
-import { createUserWithEmailAndPassword, signInWithPopup, GoogleAuthProvider, GithubAuthProvider, updateProfile } from "firebase/auth";
+import { createUserWithEmailAndPassword, signInWithPopup, GoogleAuthProvider, updateProfile } from "firebase/auth";
 import { createUserProfile } from "../login/actions";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
@@ -74,27 +73,21 @@ export default function RegisterPage() {
     }
   };
 
-  const handleOAuth = async (provider: "google" | "github") => {
+  const handleGoogleSignUp = async () => {
     setLoading(true);
     setError("");
     setSuccess("");
 
     try {
-      const authProvider = provider === "google" ? new GoogleAuthProvider() : new GithubAuthProvider();
-      const userCredential = await signInWithPopup(auth, authProvider);
+      const userCredential = await signInWithPopup(auth, new GoogleAuthProvider());
       await createUserProfile(userCredential.user.uid, userCredential.user.email, userCredential.user.displayName);
       toast.success("Account created successfully");
       router.push("/");
     } catch (err: any) {
       const code = err?.code || "";
-      let msg = err.message || "Failed to sign up";
-      if (code === "auth/operation-not-allowed") {
-        msg = "GitHub sign-in is not enabled yet. Please enable it in Firebase Console → Authentication → Sign-in method.";
-      } else if (code === "auth/popup-closed-by-user") {
-        msg = "Sign-in popup was closed. Please try again.";
-      } else if (code === "auth/account-exists-with-different-credential") {
-        msg = "An account already exists with the same email. Try signing in with a different method.";
-      }
+      const msg = code === "auth/popup-closed-by-user"
+        ? "Sign-in popup was closed. Please try again."
+        : err.message || "Failed to sign up with Google";
       setError(msg);
       toast.error(msg);
       setLoading(false);
@@ -225,22 +218,14 @@ export default function RegisterPage() {
 
           <div className="my-8 h-px bg-white/6" />
 
-          <div className="space-y-2.5">
+          <div>
             <button
-              onClick={() => handleOAuth("google")}
+              onClick={handleGoogleSignUp}
               disabled={loading}
               className="flex w-full items-center justify-center gap-2 rounded-sm border border-border bg-transparent px-4 py-3 text-sm text-foreground/80 transition-colors hover:border-primary/35 hover:text-foreground disabled:opacity-50"
             >
               <LuUserRound className="h-4 w-4" />
               Sign up with Google
-            </button>
-            <button
-              onClick={() => handleOAuth("github")}
-              disabled={loading}
-              className="flex w-full items-center justify-center gap-2 rounded-sm border border-white/15 bg-[#24292e] px-4 py-3 text-sm font-semibold text-white transition-all hover:bg-[#2f3640] disabled:opacity-50"
-            >
-              <FaGithub className="h-4 w-4" />
-              Sign up with GitHub
             </button>
           </div>
 
