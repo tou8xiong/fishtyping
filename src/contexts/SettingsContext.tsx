@@ -2,7 +2,7 @@
 
 import { createContext, useContext, useEffect, useState } from "react";
 
-type Theme = "dark" | "light" | "system";
+type Theme = "light" | "auto";
 type FontFamily = "jetbrains" | "crimson" | "garamond";
 type FontSize = "small" | "medium" | "large";
 
@@ -26,7 +26,7 @@ interface SettingsContextType {
 }
 
 const defaultSettings: Settings = {
-  theme: "dark",
+  theme: "auto",
   fontFamily: "jetbrains",
   fontSize: "medium",
   defaultLanguage: "english",
@@ -47,7 +47,10 @@ export function SettingsProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     const saved = localStorage.getItem("fishtyping-settings");
     if (saved) {
-      setSettings({ ...defaultSettings, ...JSON.parse(saved) });
+      const parsed = JSON.parse(saved);
+      // Migrate old "dark"/"system" values to "auto"
+      if (parsed.theme === "dark" || parsed.theme === "system") parsed.theme = "auto";
+      setSettings({ ...defaultSettings, ...parsed });
     }
   }, []);
 
@@ -55,13 +58,13 @@ export function SettingsProvider({ children }: { children: React.ReactNode }) {
     const root = document.documentElement;
 
     // Apply theme
-    if (settings.theme === "system") {
+    if (settings.theme === "auto") {
       const isDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
       root.classList.toggle("dark", isDark);
       root.classList.toggle("light", !isDark);
     } else {
-      root.classList.toggle("dark", settings.theme === "dark");
-      root.classList.toggle("light", settings.theme === "light");
+      root.classList.remove("dark");
+      root.classList.add("light");
     }
   }, [settings.theme]);
 

@@ -7,7 +7,6 @@ import {
   LuCog,
   LuKeyboard,
   LuLogOut,
-  LuMoon,
   LuMonitor,
   LuPalette,
   LuShield,
@@ -259,14 +258,31 @@ export default function SettingsPage() {
               {/* Theme picker */}
               <div className="mb-7">
                 <Label>Theme</Label>
-                <div className="grid grid-cols-3 gap-3">
+                <div className="grid grid-cols-2 gap-3">
                   {(
                     [
-                      { value: "dark", label: "Dark", Icon: LuMoon },
-                      { value: "light", label: "Light", Icon: LuSun },
-                      { value: "system", label: "System", Icon: LuMonitor },
+                      {
+                        value: "light",
+                        label: "Light",
+                        desc: "Always light",
+                        Icon: LuSun,
+                        bg: "bg-[#efefef]",
+                        bar1: "bg-black/20",
+                        bar2: "bg-black/10",
+                        btn: "bg-black/10",
+                      },
+                      {
+                        value: "auto",
+                        label: "Auto",
+                        desc: "Follows your OS",
+                        Icon: LuMonitor,
+                        bg: "",
+                        bar1: "",
+                        bar2: "",
+                        btn: "",
+                      },
                     ] as const
-                  ).map(({ value, label, Icon }) => {
+                  ).map(({ value, label, desc, Icon, bg, bar1, bar2, btn }) => {
                     const isActive = settings.theme === value;
                     return (
                       <button
@@ -283,54 +299,33 @@ export default function SettingsPage() {
                       >
                         {/* Mini browser preview */}
                         <div
-                          className={`h-16 rounded-lg mb-3 overflow-hidden ${
-                            value === "system"
-                              ? ""
-                              : value === "dark"
-                              ? "bg-[#111]"
-                              : "bg-[#efefef]"
-                          }`}
+                          className={`h-16 rounded-lg mb-3 overflow-hidden ${bg}`}
                           style={
-                            value === "system"
+                            value === "auto"
                               ? { background: "linear-gradient(135deg, #111 50%, #efefef 50%)" }
                               : {}
                           }
                         >
                           <div className="p-2 h-full flex flex-col justify-between">
                             <div className="space-y-1">
-                              <div
-                                className={`h-1.5 w-12 rounded-full ${
-                                  value === "light" ? "bg-black/20" : "bg-white/25"
-                                }`}
-                              />
-                              <div
-                                className={`h-1 w-8 rounded-full ${
-                                  value === "light" ? "bg-black/10" : "bg-white/10"
-                                }`}
-                              />
+                              <div className={`h-1.5 w-12 rounded-full ${bar1 || "bg-white/25"}`} />
+                              <div className={`h-1 w-8 rounded-full ${bar2 || "bg-white/10"}`} />
                             </div>
                             <div className="flex gap-1">
                               <div className="h-2 w-8 rounded-sm bg-primary/70" />
-                              <div
-                                className={`h-2 w-5 rounded-sm ${
-                                  value === "light" ? "bg-black/10" : "bg-white/10"
-                                }`}
-                              />
+                              <div className={`h-2 w-5 rounded-sm ${btn || "bg-white/10"}`} />
                             </div>
                           </div>
                         </div>
                         <div className="flex items-center justify-between">
-                          <div className="flex items-center gap-1.5">
-                            <Icon
-                              className={`h-3.5 w-3.5 ${isActive ? "text-primary" : "text-foreground/50"}`}
-                            />
-                            <span
-                              className={`text-xs font-black uppercase tracking-wider ${
-                                isActive ? "text-primary" : "text-foreground/60"
-                              }`}
-                            >
-                              {label}
-                            </span>
+                          <div>
+                            <div className="flex items-center gap-1.5 mb-0.5">
+                              <Icon className={`h-3.5 w-3.5 ${isActive ? "text-primary" : "text-foreground/50"}`} />
+                              <span className={`text-xs font-black uppercase tracking-wider ${isActive ? "text-primary" : "text-foreground/60"}`}>
+                                {label}
+                              </span>
+                            </div>
+                            <div className="text-[10px] text-foreground/35">{desc}</div>
                           </div>
                           {isActive && (
                             <div className="bg-primary/20 rounded-full p-0.5">
