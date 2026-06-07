@@ -18,6 +18,14 @@ interface LeaderboardEntry {
 const filters = ["Today", "This Week", "All Time"];
 const languages = ["English", "Lao"];
 
+function getSpeedTier(wpm: number) {
+  if (wpm >= 130) return { label: "Legend", bg: "bg-purple-500/20", text: "text-purple-300", border: "border-purple-500/30" };
+  if (wpm >= 100) return { label: "Elite", bg: "bg-primary/20", text: "text-primary", border: "border-primary/30" };
+  if (wpm >= 70)  return { label: "Pro", bg: "bg-green-500/20", text: "text-green-400", border: "border-green-500/30" };
+  if (wpm >= 45)  return { label: "Average", bg: "bg-yellow-500/20", text: "text-yellow-400", border: "border-yellow-500/30" };
+  return { label: "Rising", bg: "bg-white/5", text: "text-foreground/40", border: "border-white/10" };
+}
+
 export default function LeaderboardPage() {
   const [leaderboard, setLeaderboard] = useState<LeaderboardEntry[]>([]);
   const [loading, setLoading] = useState(true);
@@ -28,15 +36,10 @@ export default function LeaderboardPage() {
     fetch("/api/leaderboard")
       .then((res) => res.json())
       .then((data) => {
-        if (!data.error) {
-          setLeaderboard(data.leaderboard || []);
-        }
+        if (!data.error) setLeaderboard(data.leaderboard || []);
         setLoading(false);
       })
-      .catch((err) => {
-        console.error("Error fetching leaderboard:", err);
-        setLoading(false);
-      });
+      .catch(() => setLoading(false));
   }, []);
 
   const filterLeaderboardByTime = (data: LeaderboardEntry[]) => {
@@ -46,87 +49,82 @@ export default function LeaderboardPage() {
 
     let filtered = data;
     if (activeFilter === "Today") {
-      filtered = data.filter((entry) => new Date(entry.date) >= today);
+      filtered = data.filter((e) => new Date(e.date) >= today);
     } else if (activeFilter === "This Week") {
-      filtered = data.filter((entry) => new Date(entry.date) >= weekAgo);
+      filtered = data.filter((e) => new Date(e.date) >= weekAgo);
     }
 
-    // Filter by the passage's language (the typing language of the run),
-    // not the user's profile language.
     const langFilter = activeLanguage.toLowerCase();
-    filtered = filtered.filter((entry) => entry.passageLanguage === langFilter);
-
-    // Re-rank after filtering
-    return filtered.map((entry, index) => ({
-      ...entry,
-      rank: index + 1
-    }));
+    filtered = filtered.filter((e) => e.passageLanguage === langFilter);
+    return filtered.map((e, i) => ({ ...e, rank: i + 1 }));
   };
 
   const filteredLeaderboard = filterLeaderboardByTime(leaderboard);
   const topThree = filteredLeaderboard.slice(0, 3);
   const restOfLeaderboard = filteredLeaderboard.slice(3);
 
-  // Placeholder data for empty leaderboard
-  const placeholderTopThree = [
-    { rank: 2, displayName: "???", avatarUrl: undefined, wpm: 0, accuracy: 0 },
-    { rank: 1, displayName: "???", avatarUrl: undefined, wpm: 0, accuracy: 0 },
-    { rank: 3, displayName: "???", avatarUrl: undefined, wpm: 0, accuracy: 0 },
-  ];
-
-  const placeholderList = Array.from({ length: 5 }, (_, i) => ({
-    rank: i + 4,
-    displayName: "???",
-    avatarUrl: undefined,
-    wpm: 0,
-    accuracy: 0,
-    date: new Date().toISOString(),
-  }));
-
-  // Display top three in correct positions: [left (rank 2), middle (rank 1), right (rank 3)]
-  const displayTopThree = topThree.length > 0
-    ? [
-        topThree[1] || null,  // Left position - 2nd place
-        topThree[0] || null,  // Middle position - 1st place
-        topThree[2] || null   // Right position - 3rd place
-      ]
-    : placeholderTopThree;
-  const displayList = restOfLeaderboard.length > 0 ? restOfLeaderboard : (topThree.length === 0 ? placeholderList : []);
+  const maxWpm = filteredLeaderboard[0]?.wpm || 1;
 
   const getInitials = (name: string | undefined | null) => {
-    if (!name) return "?";
-    return name
-      .split(" ")
-      .map((n) => n[0])
-      .join("")
-      .toUpperCase()
-      .slice(0, 2);
+    if (!name || name === "???") return "?";
+    return name.split(" ").map((n) => n[0]).join("").toUpperCase().slice(0, 2);
   };
 
   const formatDate = (dateString: string) => {
-    const date = new Date(dateString);
-    return date.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
+    return new Date(dateString).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
   };
 
-  const getBadge = (rank: number) => {
-    if (rank === 1) return "🥇";
-    if (rank === 2) return "🥈";
-    if (rank === 3) return "🥉";
-    return "";
-  };
+  const podiumOrder = [
+    { entry: topThree[1] || null, pos: 2 },
+    { entry: topThree[0] || null, pos: 1 },
+    { entry: topThree[2] || null, pos: 3 },
+  ];
 
-  const getAccent = (rank: number) => {
-    if (rank === 1) return "border-secondary/70 shadow-[0_0_28px_rgba(255,195,56,0.18)]";
-    if (rank === 2) return "border-white/20";
-    if (rank === 3) return "border-secondary/40";
-    return "border-border/80";
-  };
+  const podiumConfig = {
+    1: {
+      badge: "🥇",
+      label: "1ST",
+      avatarRing: "border-amber-400 shadow-[0_0_28px_rgba(251,191,36,0.35)]",
+      avatarBg: "bg-amber-400/15 text-amber-300",
+      nameCls: "text-amber-300",
+      rankBg: "bg-amber-400/20 border-amber-400/40 text-amber-300",
+      elevate: "md:-translate-y-6",
+      glow: "shadow-[0_0_40px_rgba(251,191,36,0.12)]",
+      border: "border-amber-400/40",
+      barColor: "bg-amber-400",
+    },
+    2: {
+      badge: "🥈",
+      label: "2ND",
+      avatarRing: "border-slate-300/60 shadow-[0_0_18px_rgba(203,213,225,0.2)]",
+      avatarBg: "bg-slate-300/10 text-slate-300",
+      nameCls: "text-slate-200",
+      rankBg: "bg-slate-300/15 border-slate-300/30 text-slate-300",
+      elevate: "md:-translate-y-2",
+      glow: "",
+      border: "border-white/15",
+      barColor: "bg-slate-300",
+    },
+    3: {
+      badge: "🥉",
+      label: "3RD",
+      avatarRing: "border-orange-400/60 shadow-[0_0_18px_rgba(251,146,60,0.2)]",
+      avatarBg: "bg-orange-400/10 text-orange-400",
+      nameCls: "text-orange-300",
+      rankBg: "bg-orange-400/15 border-orange-400/30 text-orange-400",
+      elevate: "",
+      glow: "",
+      border: "border-orange-400/25",
+      barColor: "bg-orange-400",
+    },
+  } as const;
 
   if (loading) {
     return (
       <section className="relative flex-1 overflow-hidden bg-background px-4 py-10 md:px-8 md:py-14">
-        <div className="flex items-center justify-center py-20">
+        <div className="flex flex-col items-center justify-center gap-4 py-32">
           <div className="h-12 w-12 animate-spin rounded-full border-4 border-primary/20 border-t-primary" />
+          <p className="text-sm font-bold uppercase tracking-[0.2em] text-foreground/40">Loading rankings…</p>
         </div>
       </section>
     );
@@ -134,278 +132,213 @@ export default function LeaderboardPage() {
 
   return (
     <section className="relative flex-1 overflow-hidden bg-background px-4 py-10 md:px-8 md:py-14">
+      {/* Background glows */}
       <div className="pointer-events-none absolute inset-x-0 top-0 h-px bg-primary/30" />
-      <div className="pointer-events-none absolute left-1/2 top-10 h-72 w-72 -translate-x-1/2 rounded-full bg-primary/10 blur-[140px]" />
-      <div className="pointer-events-none absolute right-0 top-24 h-64 w-64 rounded-full bg-secondary/8 blur-[160px]" />
+      <div className="pointer-events-none absolute left-1/2 top-0 h-96 w-96 -translate-x-1/2 rounded-full bg-primary/8 blur-[160px]" />
+      <div className="pointer-events-none absolute right-10 top-40 h-64 w-64 rounded-full bg-amber-400/5 blur-[160px]" />
 
-      <div className="relative mx-auto flex w-full max-w-6xl flex-col gap-10 animate-fade-in">
-        <div className="glass rounded-xl px-5 py-6 md:px-8 md:py-8">
-          <div className="flex flex-col gap-8 lg:flex-row lg:items-start lg:justify-between">
-            <div className="space-y-3">
-              <div className="flex items-center gap-2">
-                <p className="text-[11px] font-black uppercase tracking-[0.35em] text-primary/70">Leaderboard</p>
-                <span className="inline-flex items-center rounded-full border border-amber-300/50 bg-gradient-to-r from-amber-400/20 to-yellow-500/20 px-2.5 py-0.5 text-[10px] font-black uppercase tracking-[0.25em] text-amber-300">
-                  Expert tier
+      <div className="relative mx-auto flex w-full max-w-5xl flex-col gap-10">
+
+        {/* ── Header ── */}
+        <div className="flex flex-col gap-6">
+          <div className="flex flex-col gap-2 lg:flex-row lg:items-end lg:justify-between">
+            <div>
+              <div className="mb-2 flex items-center gap-2">
+                <span className="text-[10px] font-black uppercase tracking-[0.4em] text-primary/60">Global Rankings</span>
+                <span className="inline-flex items-center rounded-full border border-amber-300/40 bg-amber-400/10 px-2.5 py-0.5 text-[9px] font-black uppercase tracking-[0.25em] text-amber-300">
+                  Expert only
                 </span>
               </div>
-              <div className="space-y-2">
-                <h1 className="text-4xl font-black uppercase tracking-tight text-primary drop-shadow-[0_0_18px_rgba(11,175,231,0.25)] md:text-6xl">
-                  Global Rankings
-                </h1>
-                <p className="max-w-xl text-base text-foreground/70 md:text-lg">
-                  The fastest fingers in the deep sea — Expert runs only.
+              <h1 className="text-5xl font-black uppercase tracking-tight text-foreground drop-shadow-[0_0_24px_rgba(11,175,231,0.2)] md:text-7xl">
+                Leader<span className="text-primary">board</span>
+              </h1>
+              {filteredLeaderboard.length > 0 && (
+                <p className="mt-2 text-sm text-foreground/50">
+                  <span className="font-bold text-foreground/70">{filteredLeaderboard.length}</span> entries · top speed{" "}
+                  <span className="font-bold text-primary">{filteredLeaderboard[0]?.wpm} WPM</span>
                 </p>
-              </div>
+              )}
             </div>
 
-            <div className="flex w-full flex-wrap gap-2 lg:w-auto lg:justify-end">
-              {filters.map((filter) => {
-                const active = filter === activeFilter;
-
-                return (
-                  <button
-                    key={filter}
-                    onClick={() => setActiveFilter(filter)}
-                    className={`rounded-md border px-5 py-2.5 text-[11px] font-black uppercase tracking-[0.25em] transition-all ${active
-                      ? "border-primary bg-primary/15 text-primary shadow-[0_0_22px_rgba(11,175,231,0.22)]"
-                      : "border-border bg-white/3 text-foreground/55 hover:border-primary/40 hover:text-foreground"
-                      }`}
-                  >
-                    {filter}
-                  </button>
-                );
-              })}
-            </div>
-          </div>
-
-          {/* Language Filter */}
-          <div className="flex w-full flex-wrap gap-2 justify-center mt-4">
-            {languages.map((lang) => {
-              const active = lang === activeLanguage;
-
-              return (
+            {/* Time filters */}
+            <div className="flex gap-1.5">
+              {filters.map((f) => (
                 <button
-                  key={lang}
-                  onClick={() => setActiveLanguage(lang)}
-                  className={`rounded-md border px-5 py-2.5 text-[11px] font-black uppercase tracking-[0.25em] transition-all ${active
-                    ? "border-primary bg-primary/15 text-primary shadow-[0_0_22px_rgba(11,175,231,0.22)]"
-                    : "border-border bg-white/3 text-foreground/55 hover:border-primary/40 hover:text-foreground"
-                    }`}
+                  key={f}
+                  onClick={() => setActiveFilter(f)}
+                  className={`rounded-lg border px-4 py-2 text-[10px] font-black uppercase tracking-[0.2em] transition-all ${
+                    activeFilter === f
+                      ? "border-primary bg-primary/15 text-primary"
+                      : "border-white/8 bg-white/3 text-foreground/45 hover:border-white/15 hover:text-foreground/70"
+                  }`}
                 >
-                  {lang}
+                  {f}
                 </button>
-              );
-            })}
+              ))}
+            </div>
+          </div>
+
+          {/* Language tabs */}
+          <div className="flex gap-1 rounded-xl border border-white/8 bg-white/2 p-1 w-fit">
+            {languages.map((lang) => (
+              <button
+                key={lang}
+                onClick={() => setActiveLanguage(lang)}
+                className={`rounded-lg px-6 py-2 text-[11px] font-black uppercase tracking-[0.2em] transition-all ${
+                  activeLanguage === lang
+                    ? "bg-primary text-black shadow-[0_0_18px_rgba(11,175,231,0.3)]"
+                    : "text-foreground/45 hover:text-foreground/70"
+                }`}
+              >
+                {lang}
+              </button>
+            ))}
           </div>
         </div>
 
-        <div className="grid gap-5 md:grid-cols-3">
-          {/* Rank 2 - Left */}
-          <article
-            className={`glass group relative flex min-h-64 flex-col justify-between rounded-xl border px-6 py-7 transition-all duration-300 hover:-translate-y-1 ${getAccent(2)}`}
-          >
-            <div className="absolute inset-0 rounded-xl bg-[radial-gradient(circle_at_top,rgba(248,250,252,0.04),transparent_60%)] opacity-70" />
-            <div className="relative flex items-start justify-between">
-              <div className="flex items-center gap-4">
-                <div className="flex h-16 w-16 items-center justify-center rounded-2xl border text-base font-black border-primary/40 bg-primary/10 text-primary overflow-hidden">
-                  {displayTopThree[0]?.avatarUrl ? (
-                    <img src={displayTopThree[0].avatarUrl} alt="Avatar" className="h-full w-full object-cover" />
+        {/* ── Podium ── */}
+        <div className="grid grid-cols-3 items-end gap-3">
+          {podiumOrder.map(({ entry, pos }) => {
+            const cfg = podiumConfig[pos as 1 | 2 | 3];
+            const isEmpty = !entry;
+
+            return (
+              <article
+                key={pos}
+                className={`glass relative flex flex-col rounded-2xl border p-5 transition-all duration-300 hover:-translate-y-1 ${cfg.elevate} ${cfg.border} ${cfg.glow}`}
+              >
+                <div className="absolute inset-0 rounded-2xl bg-[radial-gradient(circle_at_top_left,rgba(255,255,255,0.04),transparent_55%)]" />
+
+                {/* Rank badge */}
+                <div className={`relative mb-4 self-start rounded-full border px-3 py-1 text-[10px] font-black uppercase tracking-[0.3em] ${cfg.rankBg}`}>
+                  {cfg.badge} {cfg.label}
+                </div>
+
+                {/* Avatar */}
+                <div className={`relative mb-3 flex h-14 w-14 items-center justify-center rounded-2xl border-2 text-sm font-black overflow-hidden ${cfg.avatarRing} ${cfg.avatarBg}`}>
+                  {entry?.avatarUrl ? (
+                    <img src={entry.avatarUrl} alt="avatar" className="h-full w-full object-cover" />
                   ) : (
-                    displayTopThree[0] ? getInitials(displayTopThree[0].displayName) : "?"
+                    isEmpty ? pos : getInitials(entry?.displayName)
                   )}
                 </div>
-                <div className="space-y-1">
-                  <div className="inline-flex rounded-full border border-secondary/40 bg-secondary/10 px-3 py-1 text-xs font-black text-secondary">
-                    {getBadge(2)} #2
+
+                {/* Name */}
+                <div className={`relative text-lg font-black tracking-tight truncate ${cfg.nameCls}`}>
+                  {entry?.displayName || "—"}
+                </div>
+
+                {/* Stats */}
+                <div className="relative mt-4 flex items-end justify-between">
+                  <div>
+                    <div className="text-3xl font-black tabular-nums text-foreground">
+                      {entry?.wpm || "—"}
+                    </div>
+                    <div className="text-[9px] font-black uppercase tracking-[0.35em] text-foreground/35 mt-0.5">WPM</div>
                   </div>
-                  <h2 className="text-2xl font-black tracking-tight text-foreground">
-                    {displayTopThree[0]?.displayName || "???"}
-                  </h2>
-                </div>
-              </div>
-              <span className="text-2xl text-foreground/20">🏆</span>
-            </div>
-
-            <div className="relative mt-8 flex items-end justify-between gap-4">
-              <div>
-                <div className="text-4xl font-black tabular-nums text-primary/90">
-                  {displayTopThree[0]?.wpm || "—"}
-                </div>
-                <div className="mt-1 text-[11px] font-black uppercase tracking-[0.3em] text-foreground/40">
-                  WPM
-                </div>
-              </div>
-              <div className="text-right">
-                <div className="text-lg font-black tabular-nums text-secondary">{displayTopThree[0]?.accuracy ? Math.round(displayTopThree[0].accuracy) + "%" : "—"}</div>
-                <div className="mt-1 text-[11px] font-black uppercase tracking-[0.3em] text-foreground/40">
-                  ACC
-                </div>
-              </div>
-            </div>
-          </article>
-
-          {/* Rank 1 - Middle (Elevated) */}
-          <article
-            className={`glass group relative flex min-h-64 flex-col justify-between rounded-xl border px-6 py-7 transition-all duration-300 hover:-translate-y-1 md:-translate-y-3 ${getAccent(1)}`}
-          >
-            <div className="absolute inset-0 rounded-xl bg-[radial-gradient(circle_at_top,rgba(248,250,252,0.04),transparent_60%)] opacity-70" />
-            <div className="relative flex items-start justify-between">
-              <div className="flex items-center gap-4">
-                <div className="flex h-16 w-16 items-center justify-center rounded-2xl border text-base font-black border-secondary bg-secondary/10 text-secondary shadow-[0_0_18px_rgba(255,195,56,0.2)] overflow-hidden">
-                  {displayTopThree[1]?.avatarUrl ? (
-                    <img src={displayTopThree[1].avatarUrl} alt="Avatar" className="h-full w-full object-cover" />
-                  ) : (
-                    displayTopThree[1] ? getInitials(displayTopThree[1].displayName) : "?"
-                  )}
-                </div>
-                <div className="space-y-1">
-                  <div className="inline-flex rounded-full border border-secondary/40 bg-secondary/10 px-3 py-1 text-xs font-black text-secondary">
-                    {getBadge(1)} #1
+                  <div className="text-right">
+                    <div className="text-base font-black tabular-nums text-foreground/70">
+                      {entry?.accuracy ? Math.round(entry.accuracy) + "%" : "—"}
+                    </div>
+                    <div className="text-[9px] font-black uppercase tracking-[0.35em] text-foreground/35 mt-0.5">ACC</div>
                   </div>
-                  <h2 className="text-2xl font-black tracking-tight text-secondary">
-                    {displayTopThree[1]?.displayName || "???"}
-                  </h2>
                 </div>
-              </div>
-              <span className="text-2xl text-secondary/60">🏆</span>
-            </div>
 
-            <div className="relative mt-8 flex items-end justify-between gap-4">
-              <div>
-                <div className="text-4xl font-black tabular-nums text-primary">
-                  {displayTopThree[1]?.wpm || "—"}
-                </div>
-                <div className="mt-1 text-[11px] font-black uppercase tracking-[0.3em] text-foreground/40">
-                  WPM
-                </div>
-              </div>
-              <div className="text-right">
-                <div className="text-lg font-black tabular-nums text-secondary">{displayTopThree[1]?.accuracy ? Math.round(displayTopThree[1].accuracy) + "%" : "—"}</div>
-                <div className="mt-1 text-[11px] font-black uppercase tracking-[0.3em] text-foreground/40">
-                  ACC
-                </div>
-              </div>
-            </div>
-          </article>
-
-          {/* Rank 3 - Right */}
-          <article
-            className={`glass group relative flex min-h-64 flex-col justify-between rounded-xl border px-6 py-7 transition-all duration-300 hover:-translate-y-1 ${getAccent(3)}`}
-          >
-            <div className="absolute inset-0 rounded-xl bg-[radial-gradient(circle_at_top,rgba(248,250,252,0.04),transparent_60%)] opacity-70" />
-            <div className="relative flex items-start justify-between">
-              <div className="flex items-center gap-4">
-                <div className="flex h-16 w-16 items-center justify-center rounded-2xl border text-base font-black border-primary/40 bg-primary/10 text-primary overflow-hidden">
-                  {displayTopThree[2]?.avatarUrl ? (
-                    <img src={displayTopThree[2].avatarUrl} alt="Avatar" className="h-full w-full object-cover" />
-                  ) : (
-                    displayTopThree[2] ? getInitials(displayTopThree[2].displayName) : "?"
-                  )}
-                </div>
-                <div className="space-y-1">
-                  <div className="inline-flex rounded-full border border-secondary/40 bg-secondary/10 px-3 py-1 text-xs font-black text-secondary">
-                    {getBadge(3)} #3
+                {/* WPM bar */}
+                {entry && (
+                  <div className="relative mt-3 h-1 w-full overflow-hidden rounded-full bg-white/5">
+                    <div
+                      className={`h-full rounded-full transition-all duration-700 ${cfg.barColor}`}
+                      style={{ width: `${Math.round((entry.wpm / maxWpm) * 100)}%` }}
+                    />
                   </div>
-                  <h2 className="text-2xl font-black tracking-tight text-foreground">
-                    {displayTopThree[2]?.displayName || "???"}
-                  </h2>
-                </div>
-              </div>
-              <span className="text-2xl text-foreground/20">🏆</span>
-            </div>
-
-            <div className="relative mt-8 flex items-end justify-between gap-4">
-              <div>
-                <div className="text-4xl font-black tabular-nums text-primary/90">
-                  {displayTopThree[2]?.wpm || "—"}
-                </div>
-                <div className="mt-1 text-[11px] font-black uppercase tracking-[0.3em] text-foreground/40">
-                  WPM
-                </div>
-              </div>
-              <div className="text-right">
-                <div className="text-lg font-black tabular-nums text-secondary">{displayTopThree[2]?.accuracy ? Math.round(displayTopThree[2].accuracy) + "%" : "—"}</div>
-                <div className="mt-1 text-[11px] font-black uppercase tracking-[0.3em] text-foreground/40">
-                  ACC
-                </div>
-              </div>
-            </div>
-          </article>
+                )}
+              </article>
+            );
+          })}
         </div>
 
-        {displayList.length > 0 && (
-          <div className="glass overflow-hidden rounded-xl border border-border/80">
+        {/* ── Table (rank 4+) ── */}
+        {restOfLeaderboard.length > 0 && (
+          <div className="glass overflow-hidden rounded-2xl border border-white/8">
+            <div className="border-b border-white/5 px-6 py-4">
+              <h2 className="text-[10px] font-black uppercase tracking-[0.35em] text-foreground/40">Full Rankings</h2>
+            </div>
             <div className="overflow-x-auto">
-              <table className="min-w-full border-separate border-spacing-0">
+              <table className="min-w-full">
                 <thead>
-                  <tr className="border-b border-white/5 bg-white/1.5">
-                    <th className="px-6 py-5 text-left text-[10px] font-black uppercase tracking-[0.3em] text-foreground/35 md:px-7">
-                      Rank
-                    </th>
-                    <th className="px-6 py-5 text-left text-[10px] font-black uppercase tracking-[0.3em] text-foreground/35 md:px-7">
-                      Player
-                    </th>
-                    <th className="px-6 py-5 text-left text-[10px] font-black uppercase tracking-[0.3em] text-foreground/35 md:px-7">
-                      Speed (WPM)
-                    </th>
-                    <th className="px-6 py-5 text-left text-[10px] font-black uppercase tracking-[0.3em] text-foreground/35 md:px-7">
-                      Accuracy
-                    </th>
-                    <th className="px-6 py-5 text-left text-[10px] font-black uppercase tracking-[0.3em] text-foreground/35 md:px-7">
-                      Date
-                    </th>
+                  <tr className="border-b border-white/5">
+                    <th className="px-6 py-4 text-left text-[9px] font-black uppercase tracking-[0.35em] text-foreground/30 w-16">#</th>
+                    <th className="px-6 py-4 text-left text-[9px] font-black uppercase tracking-[0.35em] text-foreground/30">Player</th>
+                    <th className="px-6 py-4 text-left text-[9px] font-black uppercase tracking-[0.35em] text-foreground/30">Speed</th>
+                    <th className="px-6 py-4 text-left text-[9px] font-black uppercase tracking-[0.35em] text-foreground/30 hidden md:table-cell">Accuracy</th>
+                    <th className="px-6 py-4 text-left text-[9px] font-black uppercase tracking-[0.35em] text-foreground/30 hidden lg:table-cell">Date</th>
                   </tr>
                 </thead>
                 <tbody>
-                  {displayList.map((player) => (
-                    <tr key={player.rank} className="leaderboard-row">
-                      <td className="border-t border-white/5 px-6 py-5 md:px-7">
-                        <span className="inline-flex min-w-12 justify-center rounded-full border border-white/8 bg-white/2 px-3 py-1 text-sm font-medium text-foreground/75">
-                          {String(player.rank).padStart(2, "0")}
-                        </span>
-                      </td>
-                      <td className="border-t border-white/5 px-6 py-5 md:px-7">
-                        <div className="flex items-center gap-4">
-                          <div className="flex h-11 w-11 items-center justify-center rounded-full border border-primary/25 bg-primary/10 text-sm font-black text-primary overflow-hidden">
-                            {player.avatarUrl ? (
-                              <img src={player.avatarUrl} alt="Avatar" className="h-full w-full object-cover" />
-                            ) : (
-                              player.displayName === "???" ? "?" : getInitials(player.displayName)
-                            )}
+                  {restOfLeaderboard.map((player) => {
+                    const tier = getSpeedTier(player.wpm);
+                    const barWidth = Math.round((player.wpm / maxWpm) * 100);
+                    return (
+                      <tr key={player.rank} className="group border-t border-white/4 transition-colors hover:bg-white/3">
+                        <td className="px-6 py-4">
+                          <span className="text-sm font-black tabular-nums text-foreground/30">
+                            {String(player.rank).padStart(2, "0")}
+                          </span>
+                        </td>
+                        <td className="px-6 py-4">
+                          <div className="flex items-center gap-3">
+                            <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border border-primary/20 bg-primary/8 text-xs font-black text-primary overflow-hidden">
+                              {player.avatarUrl ? (
+                                <img src={player.avatarUrl} alt="avatar" className="h-full w-full object-cover" />
+                              ) : (
+                                getInitials(player.displayName)
+                              )}
+                            </div>
+                            <div>
+                              <div className="text-sm font-bold text-foreground">{player.displayName}</div>
+                              <span className={`inline-flex items-center rounded-full border px-2 py-0.5 text-[9px] font-black uppercase tracking-wider ${tier.bg} ${tier.text} ${tier.border}`}>
+                                {tier.label}
+                              </span>
+                            </div>
                           </div>
-                          <span className="text-base font-bold text-foreground">{player.displayName}</span>
-                        </div>
-                      </td>
-                      <td className="border-t border-white/5 px-6 py-5 md:px-7">
-                        <span className="text-2xl font-black tabular-nums text-primary">{player.wpm || "—"}</span>
-                      </td>
-                      <td className="border-t border-white/5 px-6 py-5 md:px-7">
-                        <span className="text-lg font-black tabular-nums text-secondary">{player.accuracy ? Math.round(player.accuracy) + "%" : "—"}</span>
-                      </td>
-                      <td className="border-t border-white/5 px-6 py-5 md:px-7">
-                        <span className="text-sm font-medium text-foreground/55">{player.displayName === "???" ? "—" : formatDate(player.date)}</span>
-                      </td>
-                    </tr>
-                  ))}
+                        </td>
+                        <td className="px-6 py-4">
+                          <div className="flex flex-col gap-1.5">
+                            <span className="text-xl font-black tabular-nums text-primary">{player.wpm}</span>
+                            <div className="h-1 w-24 overflow-hidden rounded-full bg-white/5">
+                              <div
+                                className="h-full rounded-full bg-primary/70 transition-all duration-500"
+                                style={{ width: `${barWidth}%` }}
+                              />
+                            </div>
+                          </div>
+                        </td>
+                        <td className="hidden px-6 py-4 md:table-cell">
+                          <span className={`text-base font-black tabular-nums ${player.accuracy >= 95 ? "text-green-400" : player.accuracy >= 85 ? "text-yellow-400" : "text-foreground/50"}`}>
+                            {Math.round(player.accuracy)}%
+                          </span>
+                        </td>
+                        <td className="hidden px-6 py-4 lg:table-cell">
+                          <span className="text-xs text-foreground/35">{formatDate(player.date)}</span>
+                        </td>
+                      </tr>
+                    );
+                  })}
                 </tbody>
               </table>
             </div>
           </div>
         )}
 
-        <div className="flex flex-col items-center gap-10 py-4">
-          <div className="text-center">
-            <div className="text-xl font-black uppercase tracking-tight text-primary">FishTyping</div>
-            <div className="mt-4 flex items-center justify-center gap-6 text-[10px] font-black uppercase tracking-[0.3em] text-foreground/30">
-              <span>Discord</span>
-              <span>Github</span>
-              <span>Twitter</span>
-            </div>
-            <p className="mt-5 text-[10px] uppercase tracking-[0.24em] text-foreground/20">
-              © 2026 FishTyping. High-velocity aquatic inputs.
-            </p>
+        {/* Empty state */}
+        {filteredLeaderboard.length === 0 && (
+          <div className="flex flex-col items-center gap-4 py-24 text-center">
+            <div className="text-5xl">🏆</div>
+            <p className="text-lg font-black uppercase tracking-wider text-foreground/40">No scores yet</p>
+            <p className="text-sm text-foreground/25">Be the first to claim the top spot.</p>
           </div>
-        </div>
+        )}
       </div>
     </section>
   );
