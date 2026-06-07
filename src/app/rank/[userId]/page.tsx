@@ -6,6 +6,7 @@ import Link from "next/link";
 import { LuArrowLeft, LuKeyboard, LuTarget, LuTrendingUp, LuClock, LuType } from "react-icons/lu";
 
 
+
 interface Profile {
   id: string;
   displayName: string;
@@ -52,7 +53,6 @@ export default function RankPage() {
   const [profile, setProfile] = useState<Profile | null>(null);
   const [stats, setStats] = useState<Stats | null>(null);
   const [bestScores, setBestScores] = useState<{ english: BestScore | null; lao: BestScore | null }>({ english: null, lao: null });
-  const [recentRuns, setRecentRuns] = useState<Run[]>([]);
   const [loading, setLoading] = useState(true);
   const [notFound, setNotFound] = useState(false);
 
@@ -64,7 +64,6 @@ export default function RankPage() {
         setProfile(data.profile);
         setStats(data.stats);
         setBestScores(data.bestScores);
-        setRecentRuns(data.recentRuns);
         setLoading(false);
       })
       .catch(() => { setNotFound(true); setLoading(false); });
@@ -129,9 +128,6 @@ export default function RankPage() {
             <div className="mb-1 flex flex-wrap items-center gap-2">
               <span className={`inline-flex items-center rounded-full border px-3 py-1 text-[10px] font-black uppercase tracking-[0.25em] ${tier.border} ${tier.bg} ${tier.color}`}>
                 {tier.label}
-              </span>
-              <span className="text-[10px] font-black uppercase tracking-[0.25em] text-foreground/30">
-                Joined {timeAgo(profile.joinedAt)}
               </span>
             </div>
             <h1 className="truncate text-4xl font-black tracking-tight text-foreground md:text-5xl">
@@ -208,60 +204,7 @@ export default function RankPage() {
           </div>
         )}
 
-        {/* ── Recent Runs ── */}
-        {recentRuns.length > 0 && (
-          <div className="animate-slide-up delay-400">
-            <h2 className="mb-3 text-[10px] font-black uppercase tracking-[0.35em] text-foreground/35">Recent Runs</h2>
-            <div className="glass overflow-hidden rounded-2xl border border-white/8">
-              <table className="min-w-full">
-                <thead>
-                  <tr className="border-b border-white/5">
-                    <th className="px-5 py-3 text-left text-[9px] font-black uppercase tracking-[0.3em] text-foreground/25">WPM</th>
-                    <th className="px-5 py-3 text-left text-[9px] font-black uppercase tracking-[0.3em] text-foreground/25">Accuracy</th>
-                    <th className="px-5 py-3 text-left text-[9px] font-black uppercase tracking-[0.3em] text-foreground/25">Difficulty</th>
-                    <th className="px-5 py-3 text-left text-[9px] font-black uppercase tracking-[0.3em] text-foreground/25 hidden sm:table-cell">Language</th>
-                    <th className="px-5 py-3 text-left text-[9px] font-black uppercase tracking-[0.3em] text-foreground/25 hidden md:table-cell">Date</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {recentRuns.map((run, i) => (
-                    <tr key={i} className="border-t border-white/4 transition-colors hover:bg-white/2">
-                      <td className="px-5 py-3.5">
-                        <span className="text-lg font-black tabular-nums text-primary">{run.wpm ?? "—"}</span>
-                      </td>
-                      <td className="px-5 py-3.5">
-                        <span className={`text-sm font-black tabular-nums ${(run.accuracy ?? 0) >= 95 ? "text-green-400" : (run.accuracy ?? 0) >= 85 ? "text-yellow-400" : "text-foreground/50"}`}>
-                          {run.accuracy != null ? `${Math.round(run.accuracy)}%` : "—"}
-                        </span>
-                      </td>
-                      <td className="px-5 py-3.5">
-                        <span className={`inline-flex items-center rounded-full border px-2.5 py-0.5 text-[9px] font-black uppercase tracking-wider capitalize ${difficultyColor(run.difficulty)}`}>
-                          {run.difficulty}
-                        </span>
-                      </td>
-                      <td className="hidden px-5 py-3.5 sm:table-cell">
-                        <span className="text-xs font-bold capitalize text-foreground/45">{run.language}</span>
-                      </td>
-                      <td className="hidden px-5 py-3.5 md:table-cell">
-                        <span className="text-xs text-foreground/30">{formatDate(run.date)}</span>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          </div>
-        )}
-
-        {/* Empty runs */}
-        {recentRuns.length === 0 && (
-          <div className="flex flex-col items-center gap-3 py-16 text-center">
-            <LuKeyboard className="h-10 w-10 text-foreground/15" />
-            <p className="text-sm font-black uppercase tracking-wider text-foreground/30">No runs recorded yet</p>
-          </div>
-        )}
-
-        <div className="pb-4 text-center">
+        <div className="animate-slide-up delay-400 pb-4 text-center">
           <Link href="/leaderboard" className="text-[10px] font-black uppercase tracking-[0.3em] text-foreground/25 transition-colors hover:text-foreground/50">
             ← Global Leaderboard
           </Link>
