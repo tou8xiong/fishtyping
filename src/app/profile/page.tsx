@@ -4,7 +4,7 @@ import {
   LuActivity, LuBomb, LuCheck, LuGauge, LuHistory,
   LuLogOut, LuPencil, LuSave, LuTarget, LuTrophy, LuUpload, LuX,
 } from "react-icons/lu";
-import { useAuth } from "@/hooks/useAuth";
+import { useRequireAuth } from "@/hooks/useRequireAuth";
 import { useRouter } from "next/navigation";
 import { useEffect, useState, useRef } from "react";
 import { signOut } from "firebase/auth";
@@ -43,7 +43,7 @@ const defaultStats: UserStats = {
 type StatsLanguage = "all" | "english" | "lao";
 
 export default function ProfilePage() {
-  const { user, loading } = useAuth();
+  const { user, loading } = useRequireAuth();
   const router = useRouter();
   const [stats, setStats] = useState<UserStats>(defaultStats);
   const [recentActivity, setRecentActivity] = useState<ActivityItem[]>([]);
@@ -56,10 +56,6 @@ export default function ProfilePage() {
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const avatars = Array.from({ length: 9 }, (_, i) => `/avaatart-icon/av${i + 1}.png`);
-
-  useEffect(() => {
-    if (!loading && !user) router.push("/login?redirect=/profile");
-  }, [loading, user, router]);
 
   useEffect(() => {
     if (user) {

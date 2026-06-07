@@ -1,6 +1,13 @@
+"use client";
+
 import { TypingTest } from "@/features/typing-test/components/TypingTest";
+import { useRequireAuth } from "@/hooks/useRequireAuth";
 
 export default function TypingPage() {
+  const { user, loading } = useRequireAuth();
+
+  if (loading || !user) return null;
+
   return (
     <div className="flex-1 flex flex-col items-center justify-center px-8 py-6 md:py-12 relative overflow-hidden">
       <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full h-full max-w-6xl max-h-[600px] bg-primary/5 rounded-full blur-[160px] pointer-events-none" />

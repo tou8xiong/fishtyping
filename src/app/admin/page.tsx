@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { useAuth } from "@/hooks/useAuth";
+import { useRequireAdmin } from "@/hooks/useRequireAuth";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import AdminLayout from "@/components/AdminLayout";
@@ -9,9 +9,6 @@ import AdminBreadcrumb from "@/components/AdminBreadcrumb";
 import TablePagination from "@/components/TablePagination";
 import type { Passage, Language, Difficulty, Length } from "@/lib/supabase/types";
 import { MdAdd, MdClose, MdEdit, MdDelete, MdToggleOn, MdToggleOff } from "react-icons/md";
-
-const ADMIN_EMAIL = "touxhk@gmail.com";
-const ADMIN_ID = "8OZdxsSF8gY5ysBogP5yqkTMaZI3";
 
 interface PassageFormData {
   content: string;
@@ -22,7 +19,7 @@ interface PassageFormData {
 }
 
 export default function AdminPage() {
-  const { user, loading } = useAuth();
+  const { user, loading } = useRequireAdmin();
   const router = useRouter();
   const [passages, setPassages] = useState<Passage[]>([]);
   const [filteredPassages, setFilteredPassages] = useState<Passage[]>([]);
@@ -44,17 +41,7 @@ export default function AdminPage() {
   });
 
   useEffect(() => {
-    if (!loading) {
-      if (!user || (user.email !== ADMIN_EMAIL && user.id !== ADMIN_ID)) {
-        router.push("/");
-      }
-    }
-  }, [user, loading, router]);
-
-  useEffect(() => {
-    if (user && (user.email === ADMIN_EMAIL || user.id === ADMIN_ID)) {
-      fetchPassages();
-    }
+    if (user) fetchPassages();
   }, [user]);
 
   const fetchPassages = async () => {
@@ -212,9 +199,7 @@ export default function AdminPage() {
     );
   }
 
-  if (!user || (user.email !== ADMIN_EMAIL && user.id !== ADMIN_ID)) {
-    return null;
-  }
+  if (!user) return null;
 
   const languages: Array<Language | "all"> = ["all", "english", "lao"];
   const difficulties: Array<Difficulty | "all"> = ["all", "beginner", "advanced", "expert"];

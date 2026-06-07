@@ -179,24 +179,8 @@ export default function LeaderboardPage() {
               )}
             </div>
 
-            {/* Time filters + Share */}
-            <div className="flex items-center gap-2">
-              <div className="flex gap-1.5">
-                {filters.map((f) => (
-                  <button
-                    key={f}
-                    onClick={() => setActiveFilter(f)}
-                    className={`rounded-lg border px-4 py-2 text-[10px] font-black uppercase tracking-[0.2em] transition-all ${
-                      activeFilter === f
-                        ? "border-primary bg-primary/15 text-primary"
-                        : "border-white/8 bg-white/3 text-foreground/45 hover:border-white/15 hover:text-foreground/70"
-                    }`}
-                  >
-                    {f}
-                  </button>
-                ))}
-              </div>
-
+            {/* Right side: Share (top) + Time filters (bottom) */}
+            <div className="flex flex-col items-end gap-3">
               {myEntry && (
                 <button
                   onClick={handleShare}
@@ -214,6 +198,22 @@ export default function LeaderboardPage() {
                   )}
                 </button>
               )}
+
+              <div className="flex gap-1.5">
+                {filters.map((f) => (
+                  <button
+                    key={f}
+                    onClick={() => setActiveFilter(f)}
+                    className={`rounded-lg border px-4 py-2 text-[10px] font-black uppercase tracking-[0.2em] transition-all ${
+                      activeFilter === f
+                        ? "border-primary bg-primary/15 text-primary"
+                        : "border-white/8 bg-white/3 text-foreground/45 hover:border-white/15 hover:text-foreground/70"
+                    }`}
+                  >
+                    {f}
+                  </button>
+                ))}
+              </div>
             </div>
           </div>
 

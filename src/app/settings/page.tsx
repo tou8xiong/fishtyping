@@ -11,14 +11,14 @@ import {
   LuSun,
   LuMonitor,
 } from "react-icons/lu";
-import { useAuth } from "@/hooks/useAuth";
+import { useRequireAuth } from "@/hooks/useRequireAuth";
 import { useRouter } from "next/navigation";
 import { useSettings } from "@/contexts/SettingsContext";
 import { signOut } from "firebase/auth";
 import { auth } from "@/lib/firebase/config";
 import { signOutAction } from "@/app/login/actions";
 import { toast } from "sonner";
-import { useEffect, useCallback } from "react";
+import { useCallback } from "react";
 
 const sidebarItems = [
   { label: "Appearance", icon: LuPalette, id: "appearance" },
@@ -28,15 +28,9 @@ const sidebarItems = [
 ];
 
 export default function SettingsPage() {
-  const { user, loading } = useAuth();
+  const { user, loading } = useRequireAuth();
   const router = useRouter();
   const { settings, updateSettings } = useSettings();
-
-  useEffect(() => {
-    if (!loading && !user) {
-      router.push("/login?redirect=/settings");
-    }
-  }, [loading, user, router]);
 
   const scrollToSection = useCallback((id: string) => {
     const el = document.getElementById(id);

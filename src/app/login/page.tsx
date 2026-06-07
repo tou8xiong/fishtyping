@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
-import { Suspense, useMemo, useState } from "react";
+import { Suspense, useEffect, useMemo, useState } from "react";
 import { LuArrowRight, LuCircleUserRound } from "react-icons/lu";
 import { auth } from "@/lib/firebase/config";
 import { signInWithEmailAndPassword, signInWithPopup, GoogleAuthProvider, sendPasswordResetEmail } from "firebase/auth";
@@ -28,6 +28,14 @@ function LoginPageInner() {
   const [resetSent, setResetSent] = useState(false);
   const searchParams = useSearchParams();
   const router = useRouter();
+
+  const redirect = searchParams.get("redirect") || "/";
+
+  useEffect(() => {
+    if (searchParams.get("redirect")) {
+      toast.info("Please sign in to continue.");
+    }
+  }, []);
 
   const oauthError = useMemo(() => {
     const errorCode = searchParams.get("error");
@@ -57,7 +65,7 @@ function LoginPageInner() {
       const userCredential = await signInWithEmailAndPassword(auth, email, password);
       await createUserProfile(userCredential.user.uid, userCredential.user.email, userCredential.user.displayName);
       toast.success("Signed in successfully");
-      router.push("/");
+      router.push(redirect);
     } catch (err: any) {
       setError(err.message || "Failed to sign in");
       toast.error(err.message || "Failed to sign in");
@@ -73,7 +81,7 @@ function LoginPageInner() {
       const userCredential = await signInWithPopup(auth, new GoogleAuthProvider());
       await createUserProfile(userCredential.user.uid, userCredential.user.email, userCredential.user.displayName);
       toast.success("Signed in successfully");
-      router.push("/");
+      router.push(redirect);
     } catch (err: any) {
       const code = err?.code || "";
       const msg = code === "auth/popup-closed-by-user"
