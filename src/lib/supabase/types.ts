@@ -43,8 +43,9 @@ export interface Passage {
 export interface PassageHistory {
   id: string;
   user_id: string;
-  passage_id: string;
+  passage_id: string | null;
   attempted_at: string;
+  difficulty: Difficulty | null;
   wpm: number | null;
   accuracy: number | null;
   duration_ms: number | null;

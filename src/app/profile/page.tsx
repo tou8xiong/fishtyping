@@ -18,6 +18,15 @@ interface UserStats {
   totalTimeMinutes: number;
 }
 
+interface ActivityItem {
+  id: string;
+  attempted_at: string;
+  difficulty: string | null;
+  wpm: number | null;
+  accuracy: number | null;
+  duration_ms: number | null;
+}
+
 const defaultStats: UserStats = {
   totalSessions: 0,
   totalWordsTyped: 0,
@@ -33,6 +42,7 @@ export default function ProfilePage() {
   const { user, loading } = useAuth();
   const router = useRouter();
   const [stats, setStats] = useState<UserStats>(defaultStats);
+  const [recentActivity, setRecentActivity] = useState<ActivityItem[]>([]);
   const [statsLanguage, setStatsLanguage] = useState<StatsLanguage>("all");
   const [statsLoading, setStatsLoading] = useState(false);
   const [editing, setEditing] = useState(false);
@@ -76,6 +86,7 @@ export default function ProfilePage() {
             bestWpm: data.bestWpm || 0,
             totalTimeMinutes: data.totalTimeMinutes || 0,
           });
+          setRecentActivity(data.recentHistory || []);
         }
       })
       .catch((err) => console.error("Error fetching stats:", err))
@@ -414,12 +425,82 @@ export default function ProfilePage() {
               <LuHistory className="h-5 w-5 text-primary/80" />
               <h2 className="text-2xl font-black tracking-tight text-foreground/65">Recent Activity</h2>
             </div>
-            <p className="text-base text-foreground/40">No recent sessions. Start typing to see your history!</p>
+            <p className="text-base text-foreground/40">Your last {recentActivity.length > 0 ? recentActivity.length : "10"} sessions.</p>
           </div>
 
           <div className="mt-5 h-px w-full bg-border/80" />
 
-          <div className="mt-5">
+          <div className={`mt-5 ${statsLoading ? "opacity-60" : ""}`}>
+            {recentActivity.length === 0 ? (
+              <div className="flex flex-col items-center justify-center py-10 text-foreground/40">
+                <LuHistory className="h-10 w-10 mb-3 opacity-30" />
+                <p className="text-sm font-black uppercase tracking-wider">No sessions yet</p>
+                <p className="text-xs mt-1">Start typing to see your history here.</p>
+              </div>
+            ) : (
+              <div className="overflow-x-auto">
+                <table className="w-full text-sm">
+                  <thead>
+                    <tr className="border-b border-white/5">
+                      <th className="text-left py-2 px-3 text-[10px] font-black uppercase tracking-[0.2em] text-foreground/40">Date</th>
+                      <th className="text-left py-2 px-3 text-[10px] font-black uppercase tracking-[0.2em] text-foreground/40">Difficulty</th>
+                      <th className="text-right py-2 px-3 text-[10px] font-black uppercase tracking-[0.2em] text-foreground/40">WPM</th>
+                      <th className="text-right py-2 px-3 text-[10px] font-black uppercase tracking-[0.2em] text-foreground/40">Accuracy</th>
+                      <th className="text-right py-2 px-3 text-[10px] font-black uppercase tracking-[0.2em] text-foreground/40">Duration</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {recentActivity.map((item) => {
+                      const date = new Date(item.attempted_at);
+                      const dateStr = date.toLocaleDateString(undefined, { month: "short", day: "numeric" });
+                      const timeStr = date.toLocaleTimeString(undefined, { hour: "2-digit", minute: "2-digit" });
+                      const durationSec = item.duration_ms ? Math.round(item.duration_ms / 1000) : null;
+                      const durationStr = durationSec != null
+                        ? durationSec >= 60 ? `${Math.floor(durationSec / 60)}m ${durationSec % 60}s` : `${durationSec}s`
+                        : "—";
+                      const diff = item.difficulty;
+                      return (
+                        <tr key={item.id} className="border-b border-white/5 hover:bg-white/[0.02] transition-colors">
+                          <td className="py-3 px-3 text-foreground/60 text-xs">
+                            <span>{dateStr}</span>
+                            <span className="ml-2 text-foreground/30">{timeStr}</span>
+                          </td>
+                          <td className="py-3 px-3">
+                            {diff ? (
+                              <span className={`inline-block px-2 py-0.5 rounded text-[10px] font-black uppercase tracking-wider ${
+                                diff === "beginner" ? "bg-green-500/15 text-green-400" :
+                                diff === "advanced" ? "bg-yellow-500/15 text-yellow-400" :
+                                "bg-red-500/15 text-red-400"
+                              }`}>
+                                {diff}
+                              </span>
+                            ) : <span className="text-foreground/30">—</span>}
+                          </td>
+                          <td className="py-3 px-3 text-right font-black text-yellow-400">
+                            {item.wpm != null ? item.wpm : "—"}
+                          </td>
+                          <td className="py-3 px-3 text-right text-foreground/80">
+                            {item.accuracy != null ? `${item.accuracy}%` : "—"}
+                          </td>
+                          <td className="py-3 px-3 text-right text-foreground/60 text-xs">
+                            {durationStr}
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </div>
+        </section>
+
+        <section className="glass rounded-xl border border-border/80 px-5 py-6 md:px-7">
+          <div className="flex items-center justify-between">
+            <div>
+              <h2 className="text-lg font-black tracking-tight text-foreground/75">Account Session</h2>
+              <p className="text-sm text-foreground/40 mt-0.5">Sign out of FishTyping.</p>
+            </div>
             <button
               onClick={handleSignOut}
               className="flex items-center gap-2 rounded-md border border-red-500/60 bg-red-500/10 px-4 py-2 text-sm font-black text-red-500 transition-colors hover:bg-red-500/20"
