@@ -6,7 +6,7 @@ import { Suspense, useMemo, useState } from "react";
 import { LuArrowRight, LuCircleUserRound } from "react-icons/lu";
 import { FaGithub } from "react-icons/fa";
 import { auth } from "@/lib/firebase/config";
-import { signInWithEmailAndPassword, signInWithPopup, GoogleAuthProvider, GithubAuthProvider } from "firebase/auth";
+import { signInWithEmailAndPassword, signInWithPopup, GoogleAuthProvider, GithubAuthProvider, sendPasswordResetEmail } from "firebase/auth";
 import { createUserProfile } from "./actions";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
@@ -25,6 +25,8 @@ function FishMark() {
 function LoginPageInner() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [email, setEmail] = useState("");
+  const [resetSent, setResetSent] = useState(false);
   const searchParams = useSearchParams();
   const router = useRouter();
 
@@ -90,6 +92,27 @@ function LoginPageInner() {
     }
   };
 
+  const handleForgotPassword = async () => {
+    if (!email.trim()) {
+      toast.error("Enter your email address above first.");
+      return;
+    }
+    try {
+      await sendPasswordResetEmail(auth, email.trim());
+      setResetSent(true);
+      toast.success("Reset email sent — check your inbox.");
+    } catch (err: any) {
+      const code = err?.code || "";
+      if (code === "auth/user-not-found") {
+        toast.error("No account found with that email.");
+      } else if (code === "auth/invalid-email") {
+        toast.error("That email address is invalid.");
+      } else {
+        toast.error(err.message || "Failed to send reset email.");
+      }
+    }
+  };
+
   return (
     <section className="relative flex-1 overflow-hidden bg-background px-6 py-16">
       <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(11,175,231,0.08),transparent_35%)]" />
@@ -106,6 +129,21 @@ function LoginPageInner() {
             <p className="mt-2 text-base text-foreground/65">Type faster. Swim farther.</p>
           </div>
 
+          {resetSent ? (
+            <div className="rounded-sm border border-primary/25 bg-primary/[0.07] px-4 py-5 text-center space-y-2">
+              <p className="text-sm font-bold text-primary">Check your inbox</p>
+              <p className="text-xs text-foreground/55">
+                A password reset link was sent to <span className="text-foreground/80 font-semibold">{email}</span>.
+              </p>
+              <button
+                type="button"
+                onClick={() => setResetSent(false)}
+                className="mt-2 text-[10px] font-black uppercase tracking-widest text-foreground/40 hover:text-foreground/70 transition-colors"
+              >
+                Back to sign in
+              </button>
+            </div>
+          ) : (
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className="space-y-1.5">
               <label className="block text-[11px] font-black uppercase tracking-[0.24em] text-foreground/65">
@@ -115,6 +153,8 @@ function LoginPageInner() {
                 name="email"
                 type="email"
                 required
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
                 placeholder="diver@ocean.net"
                 className="w-full rounded-sm border border-border bg-white/[0.03] px-4 py-3 text-sm text-foreground placeholder:text-foreground/25 focus:border-primary/60 focus:outline-none focus:ring-0"
               />
@@ -125,9 +165,13 @@ function LoginPageInner() {
                 <label className="block text-[11px] font-black uppercase tracking-[0.24em] text-foreground/65">
                   Password
                 </label>
-                <a href="#" className="text-[10px] font-black text-primary/80 transition-colors hover:text-primary">
+                <button
+                  type="button"
+                  onClick={handleForgotPassword}
+                  className="text-[10px] font-black text-primary/80 transition-colors hover:text-primary"
+                >
                   Forgot?
-                </a>
+                </button>
               </div>
               <input
                 name="password"
