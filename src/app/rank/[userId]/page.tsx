@@ -5,13 +5,13 @@ import { useParams, useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { LuArrowLeft, LuKeyboard, LuTarget, LuTrendingUp, LuClock, LuType } from "react-icons/lu";
 
+
 interface Profile {
   id: string;
   displayName: string;
   username: string;
   avatarUrl?: string;
   preferredLanguage?: string;
-  joinedAt: string;
 }
 
 interface Stats {
@@ -28,14 +28,6 @@ interface BestScore {
   accuracy: number;
 }
 
-interface Run {
-  wpm: number | null;
-  accuracy: number | null;
-  difficulty: string;
-  language: string;
-  date: string;
-}
-
 function getSpeedTier(wpm: number) {
   if (wpm >= 130) return { label: "Legend", color: "text-purple-300", border: "border-purple-500/40", bg: "bg-purple-500/10" };
   if (wpm >= 100) return { label: "Elite", color: "text-primary", border: "border-primary/40", bg: "bg-primary/10" };
@@ -49,26 +41,6 @@ function getInitials(name: string | undefined | null) {
   return name.split(" ").map((n) => n[0]).join("").toUpperCase().slice(0, 2);
 }
 
-function difficultyColor(d: string) {
-  if (d === "expert") return "text-red-400 bg-red-500/15 border-red-500/25";
-  if (d === "advanced") return "text-yellow-400 bg-yellow-500/15 border-yellow-500/25";
-  return "text-green-400 bg-green-500/15 border-green-500/25";
-}
-
-function formatDate(dateString: string) {
-  return new Date(dateString).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
-}
-
-function timeAgo(dateString: string) {
-  const diff = Date.now() - new Date(dateString).getTime();
-  const days = Math.floor(diff / 86400000);
-  if (days < 1) return "today";
-  if (days === 1) return "1 day ago";
-  if (days < 30) return `${days} days ago`;
-  const months = Math.floor(days / 30);
-  if (months < 12) return `${months} month${months > 1 ? "s" : ""} ago`;
-  return `${Math.floor(months / 12)} year${Math.floor(months / 12) > 1 ? "s" : ""} ago`;
-}
 
 export default function RankPage() {
   const params = useParams();

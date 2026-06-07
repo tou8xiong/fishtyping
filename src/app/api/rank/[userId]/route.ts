@@ -57,30 +57,23 @@ export async function GET(
           null
         );
 
-    const recentRuns = history.slice(0, 10).map((h) => ({
-      wpm: h.wpm,
-      accuracy: h.accuracy,
-      difficulty: h.passages?.difficulty || "unknown",
-      language: h.passages?.language || profile.preferred_language || "english",
-      date: h.attempted_at,
-    }));
-
-    return NextResponse.json({
-      profile: {
-        id: profile.id,
-        displayName: profile.display_name || profile.username || "Anonymous",
-        username: profile.username,
-        avatarUrl: profile.avatar_url,
-        preferredLanguage: profile.preferred_language,
-        joinedAt: profile.created_at,
+    return NextResponse.json(
+      {
+        profile: {
+          id: profile.id,
+          displayName: profile.display_name || profile.username || "Anonymous",
+          username: profile.username,
+          avatarUrl: profile.avatar_url,
+          preferredLanguage: profile.preferred_language,
+        },
+        stats: { totalSessions, bestWpm, avgWpm, avgAccuracy, totalWords, totalTimeMinutes },
+        bestScores: {
+          english: bestByLang("english"),
+          lao: bestByLang("lao"),
+        },
       },
-      stats: { totalSessions, bestWpm, avgWpm, avgAccuracy, totalWords, totalTimeMinutes },
-      bestScores: {
-        english: bestByLang("english"),
-        lao: bestByLang("lao"),
-      },
-      recentRuns,
-    });
+      { headers: { "Cache-Control": "public, max-age=60, stale-while-revalidate=300" } }
+    );
   } catch {
     return NextResponse.json({ error: "Internal server error" }, { status: 500 });
   }
