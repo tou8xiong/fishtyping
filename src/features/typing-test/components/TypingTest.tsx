@@ -332,7 +332,7 @@ export const TypingTest = () => {
   if (!isMounted) return null;
 
   return (
-    <div className="w-[calc(100%-190px)] mx-auto h-full flex flex-col gap-6 px-2">
+    <div className="w-full max-w-5xl mx-auto h-full flex flex-col gap-6 px-2">
       {/* Controls and Stats Row - Hide when typing */}
       {!isTyping && (
         <div className="w-full mx-auto flex flex-col md:flex-row items-center justify-between gap-6">
@@ -429,15 +429,16 @@ export const TypingTest = () => {
 
       {/* Main Typing Area */}
       <div className="w-full mx-auto">
+        <div className="rounded-2xl border border-white/[0.07] bg-white/[0.02] shadow-[0_8px_40px_rgba(0,0,0,0.5),0_0_0_1px_rgba(11,175,231,0.04),inset_0_1px_0_rgba(255,255,255,0.04)] overflow-hidden">
         {isGenerating ? (
-          <div className="rounded-2xl px-4 md:px-8 py-4 min-h-[300px] flex flex-col items-center justify-center relative">
+          <div className="px-4 md:px-8 py-4 min-h-[300px] flex flex-col items-center justify-center relative">
             <div className="flex flex-col items-center justify-center gap-4">
               <FaRotateRight className="text-4xl text-primary animate-spin" />
               <p className="text-xl text-foreground/50">Loading passage...</p>
             </div>
           </div>
         ) : isFinished ? (
-          <div className="rounded-2xl px-4 md:px-8 py-6 min-h-[300px] relative">
+          <div className="px-4 md:px-8 py-6 min-h-[300px] relative">
             <div className="flex flex-col md:flex-row md:items-stretch gap-8">
               {/* Left: large WPM + ACC */}
               <div className="flex md:flex-col gap-8 md:gap-4 md:min-w-[140px] md:pr-4 md:border-r md:border-white/5">
@@ -478,7 +479,7 @@ export const TypingTest = () => {
           </div>
         ) : (
           <div
-            className="rounded-2xl px-4 md:px-8 py-4 min-h-[300px] flex items-center justify-center relative group cursor-text"
+            className="px-4 md:px-8 py-4 min-h-[300px] flex items-center justify-center relative group cursor-text"
             onClick={() => inputRef.current?.focus()}
           >
             <div className="w-full">
@@ -554,37 +555,41 @@ export const TypingTest = () => {
           </div>
         )}
 
-        {/* Paused indicator — sits below the passage so it never overlaps the text */}
+        {/* Paused indicator */}
         {isPaused && !isFinished && (
-          <div className="flex justify-center mt-4">
+          <div className="flex justify-center pb-4">
             <div className="px-4 py-2 rounded-md bg-black/60 backdrop-blur-sm border border-white/10 text-xs uppercase tracking-[0.3em] text-foreground/70">
               Paused — type to resume
             </div>
           </div>
         )}
+        </div>{/* end glass card */}
       </div>
 
-      {/* Action Icons Below Typing Area - Hide when actively typing, show when idle or paused */}
+      {/* Action row — hidden while actively typing */}
       {(!isTyping || isPaused) && !isFinished && (
-        <div className="flex items-center justify-center gap-4">
+        <div className="flex items-center justify-center gap-3 pb-2">
           <button
             onClick={handleReset}
-            className="p-2.5 rounded-lg bg-white/5 hover:bg-white/10 text-foreground/50 hover:text-foreground transition-all border border-white/10 hover:border-white/20"
-            title="New Passage"
+            className="group flex items-center gap-2 px-4 py-2 rounded-lg bg-white/[0.03] hover:bg-white/[0.07] text-foreground/40 hover:text-foreground/80 transition-all border border-white/[0.08] hover:border-white/20 hover:shadow-[0_0_12px_rgba(11,175,231,0.1)]"
+            title="New Passage (Tab)"
           >
-            <FaRotateRight className="text-base" />
+            <FaRotateRight className="text-sm group-hover:rotate-180 transition-transform duration-300" />
+            <span className="text-[10px] font-bold uppercase tracking-widest">Reset</span>
+            <kbd className="text-[9px] font-mono px-1.5 py-0.5 rounded bg-white/[0.06] border border-white/[0.1] text-foreground/30">Tab</kbd>
           </button>
 
           <button
             onClick={() => window.location.href = '/settings'}
-            className="p-2.5 rounded-lg bg-white/5 hover:bg-white/10 text-foreground/50 hover:text-foreground transition-all border border-white/10 hover:border-white/20"
+            className="flex items-center gap-2 px-4 py-2 rounded-lg bg-white/[0.03] hover:bg-white/[0.07] text-foreground/40 hover:text-foreground/80 transition-all border border-white/[0.08] hover:border-white/20"
             title="Settings"
           >
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
               <circle cx="12" cy="12" r="1"></circle>
               <circle cx="19" cy="12" r="1"></circle>
               <circle cx="5" cy="12" r="1"></circle>
             </svg>
+            <span className="text-[10px] font-bold uppercase tracking-widest">Settings</span>
           </button>
         </div>
       )}
