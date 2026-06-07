@@ -8,7 +8,7 @@ import AdminLayout from "@/components/AdminLayout";
 import AdminBreadcrumb from "@/components/AdminBreadcrumb";
 import TablePagination from "@/components/TablePagination";
 import type { Passage, Language, Difficulty, Length } from "@/lib/supabase/types";
-import { MdAdd, MdClose, MdEdit, MdDelete } from "react-icons/md";
+import { MdAdd, MdClose, MdEdit, MdDelete, MdToggleOn, MdToggleOff } from "react-icons/md";
 
 const ADMIN_EMAIL = "touxhk@gmail.com";
 const ADMIN_ID = "8OZdxsSF8gY5ysBogP5yqkTMaZI3";
@@ -29,6 +29,7 @@ export default function AdminPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [languageFilter, setLanguageFilter] = useState<Language | "all">("all");
   const [difficultyFilter, setDifficultyFilter] = useState<Difficulty | "all">("all");
+  const [enabledFilter, setEnabledFilter] = useState<"all" | "enabled" | "disabled">("all");
   const [showModal, setShowModal] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [passageToDelete, setPassageToDelete] = useState<string | null>(null);
@@ -86,9 +87,14 @@ export default function AdminPage() {
       filtered = filtered.filter((p) => p.difficulty === difficultyFilter);
     }
 
+    if (enabledFilter !== "all") {
+      const wantEnabled = enabledFilter === "enabled";
+      filtered = filtered.filter((p) => (p.enabled ?? true) === wantEnabled);
+    }
+
     setFilteredPassages(filtered);
     setPage(1);
-  }, [languageFilter, difficultyFilter, passages]);
+  }, [languageFilter, difficultyFilter, enabledFilter, passages]);
 
   const paginatedPassages = filteredPassages.slice((page - 1) * pageSize, page * pageSize);
 
@@ -140,6 +146,28 @@ export default function AdminPage() {
   const handleEdit = (e: React.MouseEvent, passageId: string) => {
     e.stopPropagation();
     router.push(`/admin/passages/${passageId}`);
+  };
+
+  const handleToggleEnabled = async (e: React.MouseEvent, passage: Passage) => {
+    e.stopPropagation();
+    const next = !(passage.enabled ?? true);
+    setPassages((prev) =>
+      prev.map((p) => (p.id === passage.id ? { ...p, enabled: next } : p))
+    );
+    try {
+      const supabase = createClient();
+      const { error } = await supabase
+        .from("passages")
+        .update({ enabled: next, updated_at: new Date().toISOString() })
+        .eq("id", passage.id);
+      if (error) throw error;
+    } catch (error) {
+      console.error("Failed to toggle passage:", error);
+      alert("Failed to update passage status");
+      setPassages((prev) =>
+        prev.map((p) => (p.id === passage.id ? { ...p, enabled: !next } : p))
+      );
+    }
   };
 
   const handleDelete = async (e: React.MouseEvent, passageId: string) => {
@@ -198,18 +226,26 @@ export default function AdminPage() {
           <AdminBreadcrumb items={[{ label: "Admin", href: "/admin" }, { label: "Passages" }]} />
 
           {/* Stats */}
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-2 mb-3">
+          <div className="grid grid-cols-2 md:grid-cols-5 gap-2 mb-3">
             <div className="bg-white/3 border border-white/10 rounded-md px-3 py-2">
               <div className="text-[10px] uppercase tracking-[0.18em] text-foreground/50">Total</div>
               <div className="text-lg font-bold text-primary">{passages.length}</div>
             </div>
             <div className="bg-white/3 border border-white/10 rounded-md px-3 py-2">
-              <div className="text-[10px] uppercase tracking-[0.18em] text-foreground/50">English</div>
-              <div className="text-lg font-bold text-white">{passages.filter(p => p.language === 'english').length}</div>
+              <div className="text-[10px] uppercase tracking-[0.18em] text-foreground/50">Enabled</div>
+              <div className="text-lg font-bold text-green-400">{passages.filter(p => p.enabled ?? true).length}</div>
             </div>
             <div className="bg-white/3 border border-white/10 rounded-md px-3 py-2">
-              <div className="text-[10px] uppercase tracking-[0.18em] text-foreground/50">Lao</div>
-              <div className="text-lg font-bold text-white">{passages.filter(p => p.language === 'lao').length}</div>
+              <div className="text-[10px] uppercase tracking-[0.18em] text-foreground/50">Disabled</div>
+              <div className="text-lg font-bold text-red-400">{passages.filter(p => !(p.enabled ?? true)).length}</div>
+            </div>
+            <div className="bg-white/3 border border-white/10 rounded-md px-3 py-2">
+              <div className="text-[10px] uppercase tracking-[0.18em] text-foreground/50">English / Lao</div>
+              <div className="text-lg font-bold text-white">
+                {passages.filter(p => p.language === 'english').length}
+                <span className="text-foreground/40 mx-1">/</span>
+                {passages.filter(p => p.language === 'lao').length}
+              </div>
             </div>
             <div className="bg-white/3 border border-white/10 rounded-md px-3 py-2">
               <div className="text-[10px] uppercase tracking-[0.18em] text-foreground/50">Filtered</div>
@@ -255,6 +291,24 @@ export default function AdminPage() {
               </div>
             </div>
 
+            <div className="flex items-center gap-1.5">
+              <span className="text-[10px] uppercase tracking-[0.18em] text-foreground/50">Status</span>
+              <div className="flex gap-1">
+                {(["all", "enabled", "disabled"] as const).map((opt) => (
+                  <button
+                    key={opt}
+                    onClick={() => setEnabledFilter(opt)}
+                    className={`px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider transition-all ${enabledFilter === opt
+                      ? "bg-primary text-black"
+                      : "bg-white/5 text-foreground/60 hover:bg-white/10"
+                      }`}
+                  >
+                    {opt}
+                  </button>
+                ))}
+              </div>
+            </div>
+
             <button
               onClick={handleOpenCreate}
               className="ml-auto flex items-center gap-1 px-3 py-1.5 bg-primary text-black text-xs font-bold uppercase tracking-wider rounded hover:bg-primary/90 transition-all"
@@ -276,6 +330,7 @@ export default function AdminPage() {
                     <th className="text-left py-3 px-4 text-xs uppercase tracking-wider text-foreground/50 font-black">Length</th>
                     <th className="text-left py-3 px-4 text-xs uppercase tracking-wider text-foreground/50 font-black">Words</th>
                     <th className="text-left py-3 px-4 text-xs uppercase tracking-wider text-foreground/50 font-black">Status</th>
+                    <th className="text-left py-3 px-4 text-xs uppercase tracking-wider text-foreground/50 font-black">Lifecycle</th>
                     <th className="text-left py-3 px-4 text-xs uppercase tracking-wider text-foreground/50 font-black">Used</th>
                     <th className="text-left py-3 px-4 text-xs uppercase tracking-wider text-foreground/50 font-black">Content</th>
                     <th className="text-right py-3 px-4 text-xs uppercase tracking-wider text-foreground/50 font-black">Actions</th>
@@ -304,11 +359,33 @@ export default function AdminPage() {
                       </td>
                       <td className="py-3 px-4 capitalize text-foreground/80">{passage.length}</td>
                       <td className="py-3 px-4 text-foreground/80 font-bold">{passage.word_count}</td>
+                      <td className="py-3 px-4">
+                        <span className={`inline-block px-2 py-1 rounded text-xs font-bold uppercase ${(passage.enabled ?? true)
+                          ? 'bg-green-500/20 text-green-400'
+                          : 'bg-red-500/20 text-red-400'
+                          }`}>
+                          {(passage.enabled ?? true) ? 'Enabled' : 'Disabled'}
+                        </span>
+                      </td>
                       <td className="py-3 px-4 capitalize text-foreground/60">{passage.status}</td>
                       <td className="py-3 px-4 text-foreground/80">{passage.used_count}</td>
                       <td className="py-3 px-4 text-foreground/60 max-w-md truncate">{passage.content}</td>
                       <td className="py-3 px-4">
                         <div className="flex items-center justify-end gap-2">
+                          <button
+                            onClick={(e) => handleToggleEnabled(e, passage)}
+                            className={`p-2 rounded transition-all ${(passage.enabled ?? true)
+                              ? 'bg-green-500/20 text-green-400 hover:bg-green-500/30'
+                              : 'bg-white/10 text-foreground/60 hover:bg-white/20'
+                              }`}
+                            title={(passage.enabled ?? true) ? 'Disable passage' : 'Enable passage'}
+                          >
+                            {(passage.enabled ?? true) ? (
+                              <MdToggleOn className="h-4 w-4" />
+                            ) : (
+                              <MdToggleOff className="h-4 w-4" />
+                            )}
+                          </button>
                           <button
                             onClick={(e) => handleEdit(e, passage.id)}
                             className="p-2 bg-blue-500/20 text-blue-400 rounded hover:bg-blue-500/30 transition-all"

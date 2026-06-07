@@ -410,9 +410,10 @@ return NextResponse.json(
 - Flow: Check DB → Generate with Gemini AI → Save to DB → Return to user
 - Supports multiple languages (English, Lao)
 - Difficulty levels: beginner, advanced, expert (3 levels only)
-  - Beginner: 15-30 words
-  - Advanced: 100-150 words
-  - Expert: 200-300 words
+  - Beginner: 15–25 words (progressive: letters → short words)
+  - Advanced: 25–30 words (regular words, no complex symbols)
+  - Expert: 30–45 words (includes symbols and punctuation)
+- Passages table has an `enabled` boolean column — admins can hide passages from the typing pool without deleting them
 - Challenge types: standard, punctuation, numbers, speed
 - Themes: technology, nature, science, history, general
 - Score tracking: Only Expert level scores are saved to database and displayed on leaderboard
@@ -455,11 +456,7 @@ return NextResponse.json(
 
 - ❌ Auto-edit files
 
-- ❌ Add extra features
-
-- ❌ Commit changes
-
-- ❌ Push to remote
+- ❌ Add extra features (beyond what's asked)
 
 - ❌ Create new files (unless explicitly asked)
 
@@ -487,30 +484,32 @@ return NextResponse.json(
 
 ---
 
-## Commit Protocol
+## Feature Implementation Protocol
 
-Only commit when explicitly requested by the user:
+After implementing any feature, ALWAYS follow this sequence automatically:
 
-### Before Committing
+### Step 1: Build & Verify
+```bash
+npm run build
+```
+- Fix any TypeScript or build errors before proceeding
+- Do NOT commit if build fails
 
-1. Run git status to see changes
+### Step 2: Commit
+```bash
+git add <changed files>
+git commit -m "type: short description"
+```
 
-2. Run git diff to see what was modified
-
-3. Run git log to see commit message style
-
-4. Review what will be committed
+### Step 3: Push
+```bash
+git push
+```
 
 ### Commit Message Format
 
 ```
-
 type: short description
-
-- Detail 1
-
-- Detail 2
-
 ```
 
 Types: feat, fix, refactor, docs, chore, test
@@ -518,25 +517,11 @@ Types: feat, fix, refactor, docs, chore, test
 ### Examples
 
 ```
+feat: add passage enable/disable toggle in admin panel
 
-feat: add task filtering by priority
+fix: resolve typing WPM calculation edge case
 
-- Add filter dropdown to task list
-
-- Persist filter in URL params
-
-- Update tests
-
-```
-
-```
-
-fix: resolve task creation error
-
-- Add validation for empty title
-
-- Return proper error message
-
+refactor: extract passage filter logic to hook
 ```
 
 ---
@@ -568,4 +553,4 @@ fix: resolve task creation error
 
 ---
 
-Last updated: 2026-04-27
+Last updated: 2026-06-07

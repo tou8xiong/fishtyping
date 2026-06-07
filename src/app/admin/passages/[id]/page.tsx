@@ -24,6 +24,7 @@ export default function EditPassagePage() {
     language: "english" as Language,
     difficulty: "beginner" as Difficulty,
     length: "medium" as Length,
+    enabled: true,
   });
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
@@ -55,6 +56,7 @@ export default function EditPassagePage() {
         language: data.language,
         difficulty: data.difficulty,
         length: data.length,
+        enabled: data.enabled ?? true,
       });
     } catch (error) {
       console.error("Failed to fetch passage:", error);
@@ -80,6 +82,7 @@ export default function EditPassagePage() {
           language: formData.language,
           difficulty: formData.difficulty,
           length: formData.length,
+          enabled: formData.enabled,
           word_count: wordCount,
           updated_at: new Date().toISOString(),
         })
@@ -196,6 +199,35 @@ export default function EditPassagePage() {
                 <option value="medium">Medium</option>
                 <option value="long">Long</option>
               </select>
+            </div>
+          </div>
+
+          <div>
+            <label className="block text-sm font-bold uppercase tracking-wider text-white mb-2">
+              Status
+            </label>
+            <div className="flex items-center gap-3">
+              <button
+                type="button"
+                onClick={() => setFormData({ ...formData, enabled: !formData.enabled })}
+                className={`relative inline-flex h-7 w-12 items-center rounded-full transition-colors ${formData.enabled ? 'bg-green-500' : 'bg-white/20'
+                  }`}
+                aria-pressed={formData.enabled}
+              >
+                <span
+                  className={`inline-block h-5 w-5 transform rounded-full bg-white transition-transform ${formData.enabled ? 'translate-x-6' : 'translate-x-1'
+                    }`}
+                />
+              </button>
+              <span className={`text-sm font-bold uppercase tracking-wider ${formData.enabled ? 'text-green-400' : 'text-foreground/60'
+                }`}>
+                {formData.enabled ? 'Enabled' : 'Disabled'}
+              </span>
+              <span className="text-xs text-foreground/50">
+                {formData.enabled
+                  ? 'Available in the typing pool.'
+                  : 'Hidden from users until re-enabled.'}
+              </span>
             </div>
           </div>
 
