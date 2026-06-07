@@ -369,7 +369,9 @@ export default function AdminPage() {
                       </td>
                       <td className="py-3 px-4 capitalize text-foreground/60">{passage.status}</td>
                       <td className="py-3 px-4 text-foreground/80">{passage.used_count}</td>
-                      <td className="py-3 px-4 text-foreground/60 max-w-md truncate">{passage.content}</td>
+                      <td className="py-3 px-4 w-52">
+                        <div className="max-w-[200px] truncate text-foreground/60 text-xs">{passage.content}</div>
+                      </td>
                       <td className="py-3 px-4">
                         <div className="flex items-center justify-end gap-2">
                           <button
