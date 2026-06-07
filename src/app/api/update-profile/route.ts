@@ -1,12 +1,21 @@
 import { createClient } from "@/lib/supabase/server";
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
+import { verifyAuth, unauthorized } from "@/lib/auth/verifyAuth";
 
-export async function PUT(request: Request) {
+export async function PUT(request: NextRequest) {
+  const authUser = await verifyAuth(request);
+  if (!authUser) return unauthorized();
+
   try {
     const { userId, username, displayName, avatarUrl } = await request.json();
 
     if (!userId) {
       return NextResponse.json({ error: "User ID required" }, { status: 400 });
+    }
+
+    // Users can only update their own profile
+    if (userId !== authUser.uid) {
+      return unauthorized("Forbidden");
     }
 
     const supabase = await createClient();

@@ -1,33 +1,18 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
-
-const ADMIN_EMAIL = "touxhk@gmail.com";
-const ADMIN_ID = "8OZdxsSF8gY5ysBogP5yqkTMaZI3";
-
-async function verifyAdmin(request: NextRequest) {
-  const authHeader = request.headers.get("authorization");
-  if (!authHeader) {
-    return null;
-  }
-
-  const userId = authHeader.replace("Bearer ", "");
-  return userId;
-}
+import { verifyAdmin, unauthorized } from "@/lib/auth/verifyAuth";
 
 export async function GET(request: NextRequest) {
-  try {
-    const userId = await verifyAdmin(request);
-    if (!userId) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
+  const adminUser = await verifyAdmin(request);
+  if (!adminUser) return unauthorized();
 
+  try {
     const { searchParams } = new URL(request.url);
     const limit = parseInt(searchParams.get("limit") || "1000");
     const difficulty = searchParams.get("difficulty") || "expert";
 
     const supabase = await createClient();
 
-    // Get all passage history with difficulty filter
     const { data: historyData, error: historyError } = await supabase
       .from("passage_history")
       .select("user_id, wpm, accuracy, attempted_at, difficulty, passage_id")
@@ -40,10 +25,8 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: historyError.message }, { status: 500 });
     }
 
-    // Get all unique user IDs
     const userIds = [...new Set(historyData?.map((entry) => entry.user_id) || [])];
 
-    // Fetch user details
     const { data: usersData, error: usersError } = await supabase
       .from("users")
       .select("id, username, display_name, avatar_url, preferred_language, created_at")
@@ -54,10 +37,8 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: usersError.message }, { status: 500 });
     }
 
-    // Create a map of user details
     const usersMap = new Map(usersData?.map((user) => [user.id, user]) || []);
 
-    // Create leaderboard with all attempts
     const leaderboard = historyData?.map((entry: any, index: number) => {
       const user = usersMap.get(entry.user_id);
       return {
@@ -75,7 +56,6 @@ export async function GET(request: NextRequest) {
       };
     }) || [];
 
-    // Get stats
     const uniqueUsers = new Set(historyData?.map((entry) => entry.user_id) || []);
     const stats = {
       totalUsers: uniqueUsers.size,
@@ -91,9 +71,6 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ leaderboard, stats });
   } catch (error: any) {
     console.error("GET /api/admin/ranking error:", error);
-    return NextResponse.json(
-      { error: "Failed to fetch ranking data" },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: "Failed to fetch ranking data" }, { status: 500 });
   }
 }

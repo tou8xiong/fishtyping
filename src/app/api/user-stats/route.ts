@@ -1,24 +1,28 @@
 import { createClient } from "@/lib/supabase/server";
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
+import { verifyAuth, unauthorized } from "@/lib/auth/verifyAuth";
 
-export async function GET(request: Request) {
+export async function GET(request: NextRequest) {
+  const authUser = await verifyAuth(request);
+  if (!authUser) return unauthorized();
+
   try {
     const { searchParams } = new URL(request.url);
     const userId = searchParams.get("userId");
-    const language = searchParams.get("language"); // 'english' | 'lao' | null
+    const language = searchParams.get("language");
 
     if (!userId) {
       return NextResponse.json({ error: "User ID required" }, { status: 400 });
     }
 
+    // Users can only fetch their own stats
+    if (userId !== authUser.uid) {
+      return unauthorized("Forbidden");
+    }
+
     const supabase = await createClient();
 
-    // Profile stats include runs at every difficulty (beginner/advanced/expert).
-    // For "All" we want every row, including those with a null/orphaned
-    // passage_id. For an English/Lao filter we inner-join passages and
-    // constrain by language — rows without a matching passage are skipped.
     const wantsLanguage = language === "english" || language === "lao";
-
     const selectClause = wantsLanguage ? "*, passages!inner(language)" : "*";
     let query = supabase
       .from("passage_history")
@@ -41,7 +45,6 @@ export async function GET(request: Request) {
       return NextResponse.json({ error: error.message }, { status: 500 });
     }
 
-    // Calculate stats
     const totalSessions = history.length;
     const validSessions = history.filter((h) => h.wpm && h.accuracy);
 
@@ -54,7 +57,6 @@ export async function GET(request: Request) {
     const bestWpm = validSessions.length > 0 ? Math.max(...validSessions.map((h) => h.wpm || 0)) : 0;
     const totalTimeMinutes = Math.round(totalDuration / 60000);
 
-    // Estimate total words typed (rough calculation: wpm * duration in minutes)
     const totalWordsTyped = validSessions.reduce((sum, h) => {
       const minutes = (h.duration_ms || 0) / 60000;
       return sum + Math.round((h.wpm || 0) * minutes);

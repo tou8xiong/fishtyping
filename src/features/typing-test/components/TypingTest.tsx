@@ -6,7 +6,8 @@ import { trackPassageResult, Difficulty, Language, WORD_COUNT_BY_DIFFICULTY, DEF
 import { getBeginnerPhase, getLetterPracticeText, trackBeginnerProgress } from '../utils/beginnerProgress';
 import { FaRotateRight } from "react-icons/fa6";
 import { useSettings } from '@/contexts/SettingsContext';
-import { useAuth } from '@/hooks/useAuth'
+import { useAuth } from '@/hooks/useAuth';
+import { getAuthHeaders } from '@/lib/auth/getAuthHeaders';
 import { toast } from 'sonner';
 import { ResultChart } from './ResultChart';
 
@@ -205,9 +206,10 @@ export const TypingTest = () => {
       }
 
       console.log('Loading new passage, currentPassageId:', currentPassageId);
+      const authHeaders = await getAuthHeaders();
       const response = await fetch('/api/generate-passage', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', ...authHeaders },
         body: JSON.stringify({
           difficulty,
           length: passageLength,

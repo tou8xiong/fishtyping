@@ -10,6 +10,7 @@ import { useEffect, useState, useRef } from "react";
 import { signOut } from "firebase/auth";
 import { auth } from "@/lib/firebase/config";
 import { signOutAction } from "@/app/login/actions";
+import { getAuthHeaders } from "@/lib/auth/getAuthHeaders";
 import { toast } from "sonner";
 
 interface UserStats {
@@ -72,7 +73,8 @@ export default function ProfilePage() {
     const params = new URLSearchParams({ userId: user.id });
     if (statsLanguage !== "all") params.set("language", statsLanguage);
     setStatsLoading(true);
-    fetch(`/api/user-stats?${params.toString()}`)
+    getAuthHeaders().then((authHeaders) =>
+    fetch(`/api/user-stats?${params.toString()}`, { headers: authHeaders }))
       .then((res) => res.json())
       .then((data) => {
         if (!data.error) {
@@ -94,9 +96,10 @@ export default function ProfilePage() {
   const handleSave = async () => {
     if (!user) return;
     try {
+      const authHeaders = await getAuthHeaders();
       const response = await fetch("/api/update-profile", {
         method: "PUT",
-        headers: { "Content-Type": "application/json" },
+        headers: { "Content-Type": "application/json", ...authHeaders },
         body: JSON.stringify({
           userId: user.id,
           username: user.username,
