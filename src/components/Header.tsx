@@ -11,9 +11,10 @@ import { MdAdminPanelSettings } from "react-icons/md";
 
 export function Header() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const pathname = usePathname();
   const { user, loading } = useAuth();
 
-  console.log('Header render:', { user, loading, hasUser: !!user });
+  if (pathname.startsWith("/rank")) return null;
 
   const profileName = user?.display_name || user?.username || user?.email || "Profile";
   const avatarLabel = (user?.display_name || user?.username || user?.email || "P")

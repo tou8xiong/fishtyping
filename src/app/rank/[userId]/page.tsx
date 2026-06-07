@@ -1,170 +1,300 @@
-import Link from "next/link";
-import { notFound } from "next/navigation";
+"use client";
 
-interface RankData {
-  rank: number;
-  totalPlayers: number;
-  userId: string;
+import { useEffect, useState } from "react";
+import { useParams, useRouter, useSearchParams } from "next/navigation";
+import Link from "next/link";
+import { LuArrowLeft, LuKeyboard, LuTarget, LuTrendingUp, LuClock, LuType } from "react-icons/lu";
+
+interface Profile {
+  id: string;
   displayName: string;
-  avatarUrl: string | null;
-  passageLanguage: string;
+  username: string;
+  avatarUrl?: string;
+  preferredLanguage?: string;
+  joinedAt: string;
+}
+
+interface Stats {
+  totalSessions: number;
+  bestWpm: number;
+  avgWpm: number;
+  avgAccuracy: number;
+  totalWords: number;
+  totalTimeMinutes: number;
+}
+
+interface BestScore {
   wpm: number;
   accuracy: number;
+}
+
+interface Run {
+  wpm: number | null;
+  accuracy: number | null;
+  difficulty: string;
+  language: string;
   date: string;
 }
 
 function getSpeedTier(wpm: number) {
-  if (wpm >= 130) return { label: "Legend", color: "text-purple-300", glow: "rgba(168,85,247,0.4)", border: "border-purple-400/40", bg: "bg-purple-500/10" };
-  if (wpm >= 100) return { label: "Elite", color: "text-[#0BAFE7]", glow: "rgba(11,175,231,0.4)", border: "border-[#0BAFE7]/40", bg: "bg-[#0BAFE7]/10" };
-  if (wpm >= 70)  return { label: "Pro", color: "text-green-400", glow: "rgba(74,222,128,0.4)", border: "border-green-400/40", bg: "bg-green-500/10" };
-  if (wpm >= 45)  return { label: "Average", color: "text-yellow-400", glow: "rgba(250,204,21,0.4)", border: "border-yellow-400/40", bg: "bg-yellow-500/10" };
-  return { label: "Rising", color: "text-white/50", glow: "rgba(255,255,255,0.1)", border: "border-white/20", bg: "bg-white/5" };
+  if (wpm >= 130) return { label: "Legend", color: "text-purple-300", border: "border-purple-500/40", bg: "bg-purple-500/10" };
+  if (wpm >= 100) return { label: "Elite", color: "text-primary", border: "border-primary/40", bg: "bg-primary/10" };
+  if (wpm >= 70)  return { label: "Pro", color: "text-green-400", border: "border-green-500/40", bg: "bg-green-500/10" };
+  if (wpm >= 45)  return { label: "Average", color: "text-yellow-400", border: "border-yellow-500/40", bg: "bg-yellow-500/10" };
+  return { label: "Rising", color: "text-foreground/50", border: "border-white/15", bg: "bg-white/5" };
 }
 
-function getRankSuffix(n: number) {
-  const s = ["th", "st", "nd", "rd"];
-  const v = n % 100;
-  return s[(v - 20) % 10] || s[v] || s[0];
+function getInitials(name: string | undefined | null) {
+  if (!name) return "?";
+  return name.split(" ").map((n) => n[0]).join("").toUpperCase().slice(0, 2);
 }
 
-async function fetchRankData(userId: string, lang: string): Promise<RankData | null> {
-  try {
-    const baseUrl = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
-    const res = await fetch(`${baseUrl}/api/rank/${userId}?lang=${lang}`, { cache: "no-store" });
-    if (!res.ok) return null;
-    return res.json();
-  } catch {
-    return null;
+function difficultyColor(d: string) {
+  if (d === "expert") return "text-red-400 bg-red-500/15 border-red-500/25";
+  if (d === "advanced") return "text-yellow-400 bg-yellow-500/15 border-yellow-500/25";
+  return "text-green-400 bg-green-500/15 border-green-500/25";
+}
+
+function formatDate(dateString: string) {
+  return new Date(dateString).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
+}
+
+function timeAgo(dateString: string) {
+  const diff = Date.now() - new Date(dateString).getTime();
+  const days = Math.floor(diff / 86400000);
+  if (days < 1) return "today";
+  if (days === 1) return "1 day ago";
+  if (days < 30) return `${days} days ago`;
+  const months = Math.floor(days / 30);
+  if (months < 12) return `${months} month${months > 1 ? "s" : ""} ago`;
+  return `${Math.floor(months / 12)} year${Math.floor(months / 12) > 1 ? "s" : ""} ago`;
+}
+
+export default function RankPage() {
+  const params = useParams();
+  const searchParams = useSearchParams();
+  const router = useRouter();
+  const userId = params.userId as string;
+  const highlightLang = searchParams.get("lang") || "english";
+
+  const [profile, setProfile] = useState<Profile | null>(null);
+  const [stats, setStats] = useState<Stats | null>(null);
+  const [bestScores, setBestScores] = useState<{ english: BestScore | null; lao: BestScore | null }>({ english: null, lao: null });
+  const [recentRuns, setRecentRuns] = useState<Run[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [notFound, setNotFound] = useState(false);
+
+  useEffect(() => {
+    fetch(`/api/rank/${userId}`)
+      .then((r) => r.json())
+      .then((data) => {
+        if (data.error) { setNotFound(true); setLoading(false); return; }
+        setProfile(data.profile);
+        setStats(data.stats);
+        setBestScores(data.bestScores);
+        setRecentRuns(data.recentRuns);
+        setLoading(false);
+      })
+      .catch(() => { setNotFound(true); setLoading(false); });
+  }, [userId]);
+
+  if (loading) {
+    return (
+      <section className="relative flex-1 bg-background px-4 py-10 md:px-8 md:py-14">
+        <div className="flex flex-col items-center justify-center gap-4 py-32">
+          <div className="h-12 w-12 animate-spin rounded-full border-4 border-primary/20 border-t-primary" />
+          <p className="text-sm font-bold uppercase tracking-[0.2em] text-foreground/40">Loading profile…</p>
+        </div>
+      </section>
+    );
   }
-}
 
-export default async function RankSharePage({
-  params,
-  searchParams,
-}: {
-  params: Promise<{ userId: string }>;
-  searchParams: Promise<{ lang?: string }>;
-}) {
-  const { userId } = await params;
-  const { lang = "english" } = await searchParams;
-
-  const data = await fetchRankData(userId, lang);
-  if (!data) notFound();
-
-  const tier = getSpeedTier(data.wpm);
-  const suffix = getRankSuffix(data.rank);
-  const initials = (data.displayName || "?").split(" ").map((n: string) => n[0]).join("").toUpperCase().slice(0, 2);
-  const formattedDate = new Date(data.date).toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" });
-
-  return (
-    <div className="relative flex-1 flex items-center justify-center overflow-hidden bg-background px-4 py-16">
-      {/* Background atmosphere */}
-      <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_center,rgba(11,175,231,0.07),transparent_55%)]" />
-      <div className="pointer-events-none absolute left-1/4 top-1/4 h-96 w-96 rounded-full blur-[180px]" style={{ background: `${tier.glow.replace("0.4", "0.04")}` }} />
-
-      <div className="relative w-full max-w-md animate-fade-in">
-
-        {/* Back link */}
-        <Link href="/leaderboard" className="mb-6 inline-flex items-center gap-1.5 text-[10px] font-black uppercase tracking-[0.3em] text-foreground/30 hover:text-primary/70 transition-colors">
-          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3"><path d="M19 12H5M12 5l-7 7 7 7"/></svg>
-          Leaderboard
-        </Link>
-
-        {/* Main card */}
-        <div
-          className="relative overflow-hidden rounded-3xl border bg-[#0a0a0f] p-8"
-          style={{ borderColor: tier.glow.replace("0.4", "0.2"), boxShadow: `0 0 80px ${tier.glow.replace("0.4", "0.08")}, 0 0 0 1px ${tier.glow.replace("0.4", "0.05")}, inset 0 1px 0 rgba(255,255,255,0.04)` }}
-        >
-          {/* Subtle inner glow arc */}
-          <div className="pointer-events-none absolute inset-x-0 top-0 h-px" style={{ background: `linear-gradient(90deg, transparent, ${tier.glow.replace("0.4", "0.6")}, transparent)` }} />
-
-          {/* Header row */}
-          <div className="mb-8 flex items-center justify-between">
-            {/* FishTyping brand */}
-            <div className="flex items-center gap-2">
-              <svg width="20" height="22" viewBox="0 0 20 22" fill="none" xmlns="http://www.w3.org/2000/svg">
-                <path d="M1 12.5L9 1V12.5H1ZM4.825 10.5H7V7.375L4.825 10.5ZM10.5 12.5C10.7 12.0333 10.9167 11.2167 11.15 10.05C11.3833 8.88333 11.5 7.7 11.5 6.5C11.5 5.3 11.3875 4.06667 11.1625 2.8C10.9375 1.53333 10.7167 0.6 10.5 0C11.5167 0.3 12.5292 0.858333 13.5375 1.675C14.5458 2.49167 15.4542 3.46667 16.2625 4.6C17.0708 5.73333 17.7292 6.97917 18.2375 8.3375C18.7458 9.69583 19 11.0833 19 12.5H10.5ZM13.1 10.5H16.8C16.5167 9.21667 16.0542 8.04167 15.4125 6.975C14.7708 5.90833 14.0917 5 13.375 4.25C13.4083 4.6 13.4375 4.9625 13.4625 5.3375C13.4875 5.7125 13.5 6.1 13.5 6.5C13.5 7.28333 13.4625 8.00833 13.3875 8.675C13.3125 9.34167 13.2167 9.95 13.1 10.5ZM7 18C6.4 18 5.84167 17.8583 5.325 17.575C4.80833 17.2917 4.36667 16.9333 4 16.5C3.76667 16.75 3.5125 16.9833 3.2375 17.2C2.9625 17.4167 2.65833 17.5917 2.325 17.725C1.74167 17.2917 1.24583 16.7542 0.8375 16.1125C0.429167 15.4708 0.15 14.7667 0 14H20C19.85 14.7667 19.5708 15.4708 19.1625 16.1125C18.7542 16.7542 18.2583 17.2917 17.675 17.725C17.3417 17.5917 17.0375 17.4167 16.7625 17.2C16.4875 16.9833 16.2333 16.75 16 16.5C15.6167 16.9333 15.1708 17.2917 14.6625 17.575C14.1542 17.8583 13.6 18 13 18C12.4 18 11.8417 17.8583 11.325 17.575C10.8083 17.2917 10.3667 16.9333 10 16.5C9.63333 16.9333 9.19167 17.2917 8.675 17.575C8.15833 17.8583 7.6 18 7 18ZM0 22V20H1C1.53333 20 2.05417 19.9167 2.5625 19.75C3.07083 19.5833 3.55 19.3333 4 19C4.45 19.3333 4.92917 19.5792 5.4375 19.7375C5.94583 19.8958 6.46667 19.975 7 19.975C7.53333 19.975 8.05 19.8958 8.55 19.7375C9.05 19.5792 9.53333 19.3333 10 19C10.45 19.3333 10.9292 19.5792 11.4375 19.7375C11.9458 19.8958 12.4667 19.975 13 19.975C13.5333 19.975 14.05 19.8958 14.55 19.7375C15.05 19.5792 15.5333 19.3333 16 19C16.4667 19.3333 16.95 19.5833 17.45 19.75C17.95 19.9167 18.4667 20 19 20H20V22H19C18.4833 22 17.975 21.9375 17.475 21.8125C16.975 21.6875 16.4833 21.5 16 21.25C15.5167 21.5 15.025 21.6875 14.525 21.8125C14.025 21.9375 13.5167 22 13 22C12.4833 22 11.975 21.9375 11.475 21.8125C10.975 21.6875 10.4833 21.5 10 21.25C9.51667 21.5 9.025 21.6875 8.525 21.8125C8.025 21.9375 7.51667 22 7 22C6.48333 22 5.975 21.9375 5.475 21.8125C4.975 21.6875 4.48333 21.5 4 21.25C3.51667 21.5 3.025 21.6875 2.525 21.8125C2.025 21.9375 1.51667 22 1 22H0Z" fill="#0BAFE7"/>
-              </svg>
-              <span className="text-xs font-black tracking-[0.18em] uppercase text-foreground/40">FishTyping</span>
-            </div>
-            {/* Language pill */}
-            <span className="rounded-full border border-white/10 bg-white/5 px-3 py-1 text-[9px] font-black uppercase tracking-[0.25em] text-foreground/40">
-              {data.passageLanguage} · Expert
-            </span>
-          </div>
-
-          {/* Rank hero */}
-          <div className="mb-6 text-center">
-            <div className="mb-1 text-[10px] font-black uppercase tracking-[0.4em] text-foreground/30">Global Rank</div>
-            <div className="flex items-start justify-center gap-1 leading-none">
-              <span className="mt-3 text-3xl font-black text-foreground/20">#</span>
-              <span className="text-8xl font-black tabular-nums text-foreground">{data.rank}</span>
-              <span className="mt-3 text-2xl font-black text-foreground/30">{suffix}</span>
-            </div>
-            <div className="mt-1 text-xs text-foreground/25">
-              out of {data.totalPlayers} players
-            </div>
-          </div>
-
-          {/* Avatar + name */}
-          <div className="mb-8 flex flex-col items-center gap-3">
-            <div
-              className="flex h-20 w-20 items-center justify-center rounded-2xl border-2 text-xl font-black overflow-hidden"
-              style={{ borderColor: tier.glow.replace("0.4", "0.5"), boxShadow: `0 0 24px ${tier.glow.replace("0.4", "0.25")}` }}
-            >
-              {data.avatarUrl ? (
-                <img src={data.avatarUrl} alt="avatar" className="h-full w-full object-cover" />
-              ) : (
-                <span className={tier.color}>{initials}</span>
-              )}
-            </div>
-            <div className="text-center">
-              <div className="text-xl font-black text-foreground">{data.displayName}</div>
-              <span className={`mt-1 inline-flex items-center rounded-full border px-3 py-0.5 text-[9px] font-black uppercase tracking-[0.25em] ${tier.color} ${tier.border} ${tier.bg}`}>
-                {tier.label}
-              </span>
-            </div>
-          </div>
-
-          {/* Stats row */}
-          <div className="mb-8 grid grid-cols-2 gap-3">
-            <div className="rounded-2xl border border-white/[0.06] bg-white/[0.03] p-4 text-center">
-              <div className="text-[9px] font-black uppercase tracking-[0.35em] text-foreground/30 mb-2">Speed</div>
-              <div className={`text-5xl font-black tabular-nums leading-none ${tier.color}`} style={{ textShadow: `0 0 30px ${tier.glow}` }}>
-                {data.wpm}
-              </div>
-              <div className="mt-1 text-[9px] font-black uppercase tracking-[0.25em] text-foreground/25">WPM</div>
-            </div>
-            <div className="rounded-2xl border border-white/[0.06] bg-white/[0.03] p-4 text-center">
-              <div className="text-[9px] font-black uppercase tracking-[0.35em] text-foreground/30 mb-2">Accuracy</div>
-              <div className="text-5xl font-black tabular-nums leading-none text-foreground">
-                {Math.round(data.accuracy)}
-              </div>
-              <div className="mt-1 text-[9px] font-black uppercase tracking-[0.25em] text-foreground/25">%</div>
-            </div>
-          </div>
-
-          {/* Date */}
-          <div className="mb-8 text-center text-[10px] text-foreground/25">
-            Achieved on {formattedDate}
-          </div>
-
-          {/* CTA */}
-          <Link
-            href="/typing"
-            className="flex w-full items-center justify-center gap-2 rounded-xl py-3.5 text-sm font-black uppercase tracking-[0.18em] transition-all hover:scale-[1.02]"
-            style={{ background: `linear-gradient(90deg, ${tier.glow.replace("0.4", "0.9")}, ${tier.glow.replace("0.4", "0.6")})`, color: "#000", boxShadow: `0 0 24px ${tier.glow.replace("0.4", "0.3")}` }}
-          >
-            Beat This Score
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+  if (notFound || !profile || !stats) {
+    return (
+      <section className="relative flex-1 bg-background px-4 py-10 md:px-8">
+        <div className="mx-auto flex max-w-xl flex-col items-center gap-6 py-32 text-center">
+          <div className="text-5xl">🐟</div>
+          <p className="text-xl font-black uppercase tracking-wider text-foreground/50">Player not found</p>
+          <Link href="/leaderboard" className="text-sm text-primary hover:text-primary/80 transition-colors">
+            ← Back to leaderboard
           </Link>
         </div>
+      </section>
+    );
+  }
 
-        {/* Bottom note */}
-        <p className="mt-4 text-center text-[10px] text-foreground/20">
-          fishtyping.com · Expert difficulty · {data.passageLanguage === "lao" ? "Lao" : "English"}
-        </p>
+  const tier = getSpeedTier(stats.bestWpm);
+
+  return (
+    <section className="relative flex-1 overflow-hidden bg-background px-4 py-10 md:px-8 md:py-14">
+      <div className="pointer-events-none absolute inset-x-0 top-0 h-px bg-primary/30" />
+      <div className="pointer-events-none absolute left-1/2 top-0 h-96 w-96 -translate-x-1/2 rounded-full bg-primary/6 blur-[160px]" />
+
+      <div className="relative mx-auto flex w-full max-w-4xl flex-col gap-8">
+
+        {/* Back link */}
+        <button
+          onClick={() => router.back()}
+          className="animate-fade-in flex items-center gap-2 self-start text-[11px] font-black uppercase tracking-[0.25em] text-foreground/40 transition-colors hover:text-foreground/70"
+        >
+          <LuArrowLeft className="h-3.5 w-3.5" />
+          Back
+        </button>
+
+        {/* ── Hero ── */}
+        <div className="animate-scale-in glass flex flex-col gap-6 rounded-2xl border border-white/8 p-6 sm:flex-row sm:items-center sm:gap-8 md:p-8">
+          {/* Avatar */}
+          <div className={`flex h-24 w-24 shrink-0 items-center justify-center rounded-3xl border-2 text-2xl font-black overflow-hidden ${tier.border} ${tier.bg}`}>
+            {profile.avatarUrl ? (
+              <img src={profile.avatarUrl} alt="avatar" className="h-full w-full object-cover" />
+            ) : (
+              getInitials(profile.displayName)
+            )}
+          </div>
+
+          {/* Name + meta */}
+          <div className="flex-1 min-w-0">
+            <div className="mb-1 flex flex-wrap items-center gap-2">
+              <span className={`inline-flex items-center rounded-full border px-3 py-1 text-[10px] font-black uppercase tracking-[0.25em] ${tier.border} ${tier.bg} ${tier.color}`}>
+                {tier.label}
+              </span>
+              <span className="text-[10px] font-black uppercase tracking-[0.25em] text-foreground/30">
+                Joined {timeAgo(profile.joinedAt)}
+              </span>
+            </div>
+            <h1 className="truncate text-4xl font-black tracking-tight text-foreground md:text-5xl">
+              {profile.displayName}
+            </h1>
+            {profile.username && profile.username !== profile.displayName && (
+              <p className="mt-1 text-sm text-foreground/40">@{profile.username}</p>
+            )}
+          </div>
+
+          {/* Best WPM highlight */}
+          <div className="shrink-0 text-center">
+            <div className="text-5xl font-black tabular-nums text-primary md:text-6xl">{stats.bestWpm || "—"}</div>
+            <div className="mt-1 text-[10px] font-black uppercase tracking-[0.35em] text-foreground/35">Best WPM</div>
+          </div>
+        </div>
+
+        {/* ── Stats grid ── */}
+        <div className="animate-slide-up delay-200 grid grid-cols-2 gap-3 sm:grid-cols-4 lg:grid-cols-5">
+          {[
+            { icon: LuKeyboard, label: "Sessions", value: stats.totalSessions.toLocaleString() },
+            { icon: LuTrendingUp, label: "Avg WPM", value: stats.avgWpm || "—" },
+            { icon: LuTarget, label: "Avg Acc", value: stats.avgAccuracy ? `${stats.avgAccuracy}%` : "—" },
+            { icon: LuType, label: "Words Typed", value: stats.totalWords.toLocaleString() },
+            { icon: LuClock, label: "Time Typed", value: stats.totalTimeMinutes >= 60 ? `${Math.floor(stats.totalTimeMinutes / 60)}h ${stats.totalTimeMinutes % 60}m` : `${stats.totalTimeMinutes}m` },
+          ].map(({ icon: Icon, label, value }) => (
+            <div key={label} className="glass flex flex-col gap-1 rounded-xl border border-white/8 p-4">
+              <Icon className="h-4 w-4 text-primary/60" />
+              <div className="mt-1 text-2xl font-black tabular-nums text-foreground">{value}</div>
+              <div className="text-[9px] font-black uppercase tracking-[0.3em] text-foreground/35">{label}</div>
+            </div>
+          ))}
+        </div>
+
+        {/* ── Best Expert Scores ── */}
+        {(bestScores.english || bestScores.lao) && (
+          <div className="animate-slide-up delay-300">
+            <h2 className="mb-3 text-[10px] font-black uppercase tracking-[0.35em] text-foreground/35">Best Expert Scores</h2>
+            <div className="grid grid-cols-2 gap-3">
+              {(["english", "lao"] as const).map((lang) => {
+                const score = bestScores[lang];
+                const isHighlight = highlightLang === lang;
+                return (
+                  <div
+                    key={lang}
+                    className={`glass rounded-xl border p-5 transition-all ${isHighlight ? "border-primary/40 shadow-[0_0_24px_rgba(11,175,231,0.1)]" : "border-white/8"}`}
+                  >
+                    <div className="mb-3 flex items-center justify-between">
+                      <span className="text-[10px] font-black uppercase tracking-[0.3em] text-foreground/40 capitalize">{lang}</span>
+                      {isHighlight && (
+                        <span className="rounded-full border border-primary/30 bg-primary/10 px-2 py-0.5 text-[9px] font-black uppercase tracking-wider text-primary">Featured</span>
+                      )}
+                    </div>
+                    {score ? (
+                      <div className="flex items-end justify-between">
+                        <div>
+                          <div className="text-4xl font-black tabular-nums text-primary">{score.wpm}</div>
+                          <div className="mt-0.5 text-[9px] font-black uppercase tracking-[0.35em] text-foreground/35">WPM</div>
+                        </div>
+                        <div className="text-right">
+                          <div className={`text-xl font-black tabular-nums ${score.accuracy >= 95 ? "text-green-400" : score.accuracy >= 85 ? "text-yellow-400" : "text-foreground/50"}`}>
+                            {Math.round(score.accuracy)}%
+                          </div>
+                          <div className="mt-0.5 text-[9px] font-black uppercase tracking-[0.35em] text-foreground/35">Accuracy</div>
+                        </div>
+                      </div>
+                    ) : (
+                      <p className="text-sm text-foreground/25">No expert runs yet</p>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        )}
+
+        {/* ── Recent Runs ── */}
+        {recentRuns.length > 0 && (
+          <div className="animate-slide-up delay-400">
+            <h2 className="mb-3 text-[10px] font-black uppercase tracking-[0.35em] text-foreground/35">Recent Runs</h2>
+            <div className="glass overflow-hidden rounded-2xl border border-white/8">
+              <table className="min-w-full">
+                <thead>
+                  <tr className="border-b border-white/5">
+                    <th className="px-5 py-3 text-left text-[9px] font-black uppercase tracking-[0.3em] text-foreground/25">WPM</th>
+                    <th className="px-5 py-3 text-left text-[9px] font-black uppercase tracking-[0.3em] text-foreground/25">Accuracy</th>
+                    <th className="px-5 py-3 text-left text-[9px] font-black uppercase tracking-[0.3em] text-foreground/25">Difficulty</th>
+                    <th className="px-5 py-3 text-left text-[9px] font-black uppercase tracking-[0.3em] text-foreground/25 hidden sm:table-cell">Language</th>
+                    <th className="px-5 py-3 text-left text-[9px] font-black uppercase tracking-[0.3em] text-foreground/25 hidden md:table-cell">Date</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {recentRuns.map((run, i) => (
+                    <tr key={i} className="border-t border-white/4 transition-colors hover:bg-white/2">
+                      <td className="px-5 py-3.5">
+                        <span className="text-lg font-black tabular-nums text-primary">{run.wpm ?? "—"}</span>
+                      </td>
+                      <td className="px-5 py-3.5">
+                        <span className={`text-sm font-black tabular-nums ${(run.accuracy ?? 0) >= 95 ? "text-green-400" : (run.accuracy ?? 0) >= 85 ? "text-yellow-400" : "text-foreground/50"}`}>
+                          {run.accuracy != null ? `${Math.round(run.accuracy)}%` : "—"}
+                        </span>
+                      </td>
+                      <td className="px-5 py-3.5">
+                        <span className={`inline-flex items-center rounded-full border px-2.5 py-0.5 text-[9px] font-black uppercase tracking-wider capitalize ${difficultyColor(run.difficulty)}`}>
+                          {run.difficulty}
+                        </span>
+                      </td>
+                      <td className="hidden px-5 py-3.5 sm:table-cell">
+                        <span className="text-xs font-bold capitalize text-foreground/45">{run.language}</span>
+                      </td>
+                      <td className="hidden px-5 py-3.5 md:table-cell">
+                        <span className="text-xs text-foreground/30">{formatDate(run.date)}</span>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        )}
+
+        {/* Empty runs */}
+        {recentRuns.length === 0 && (
+          <div className="flex flex-col items-center gap-3 py-16 text-center">
+            <LuKeyboard className="h-10 w-10 text-foreground/15" />
+            <p className="text-sm font-black uppercase tracking-wider text-foreground/30">No runs recorded yet</p>
+          </div>
+        )}
+
+        <div className="pb-4 text-center">
+          <Link href="/leaderboard" className="text-[10px] font-black uppercase tracking-[0.3em] text-foreground/25 transition-colors hover:text-foreground/50">
+            ← Global Leaderboard
+          </Link>
+        </div>
       </div>
-    </div>
+    </section>
   );
 }

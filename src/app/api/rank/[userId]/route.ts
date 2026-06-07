@@ -1,72 +1,87 @@
+import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
-import { NextResponse } from "next/server";
 
-export async function GET(request: Request, { params }: { params: Promise<{ userId: string }> }) {
+export async function GET(
+  _req: NextRequest,
+  { params }: { params: Promise<{ userId: string }> }
+) {
+  const { userId } = await params;
+
   try {
-    const { userId } = await params;
-    const { searchParams } = new URL(request.url);
-    const lang = searchParams.get("lang") || "english";
-
     const supabase = await createClient();
 
-    // Fetch the full expert leaderboard (same logic as /api/leaderboard)
-    const { data: historyData, error: historyError } = await supabase
+    const { data: profile, error: profileError } = await supabase
+      .from("users")
+      .select("id, username, display_name, avatar_url, preferred_language, created_at")
+      .eq("id", userId)
+      .single();
+
+    if (profileError || !profile) {
+      return NextResponse.json({ error: "User not found" }, { status: 404 });
+    }
+
+    const { data: rawHistory, error: historyError } = await supabase
       .from("passage_history")
-      .select("user_id, wpm, accuracy, attempted_at, passages(language)")
-      .eq("difficulty", "expert")
-      .order("wpm", { ascending: false })
-      .limit(500);
+      .select("wpm, accuracy, duration_ms, attempted_at, passages(language, difficulty)")
+      .eq("user_id", userId)
+      .order("attempted_at", { ascending: false })
+      .limit(100);
 
     if (historyError) {
       return NextResponse.json({ error: historyError.message }, { status: 500 });
     }
 
-    const userIds = [...new Set(historyData?.map((e: any) => e.user_id) || [])];
-    const { data: usersData } = await supabase
-      .from("users")
-      .select("id, username, display_name, avatar_url, preferred_language")
-      .in("id", userIds);
+    const history = (rawHistory || []) as unknown as Array<{
+      wpm: number | null;
+      accuracy: number | null;
+      duration_ms: number | null;
+      attempted_at: string;
+      passages: { language: string; difficulty: string } | null;
+    }>;
 
-    const usersMap = new Map(usersData?.map((u) => [u.id, u]) || []);
+    const valid = history.filter((h) => h.wpm && h.accuracy);
 
-    // Build best-per-user-per-language map
-    const bestScores = new Map<string, any>();
-    historyData?.forEach((entry: any) => {
-      const uid: string = entry.user_id;
-      const user = usersMap.get(uid);
-      const passageLanguage: string =
-        entry.passages?.language === "lao" ? "lao"
-        : entry.passages?.language === "english" ? "english"
-        : user?.preferred_language === "lao" ? "lao"
-        : "english";
-      const key = `${uid}::${passageLanguage}`;
-      const existing = bestScores.get(key);
-      if (!existing || entry.wpm > existing.wpm) {
-        bestScores.set(key, {
-          userId: uid,
-          displayName: user?.display_name || user?.username || "Anonymous",
-          avatarUrl: user?.avatar_url || null,
-          passageLanguage,
-          wpm: entry.wpm,
-          accuracy: entry.accuracy,
-          date: entry.attempted_at,
-        });
-      }
+    const totalSessions = history.length;
+    const bestWpm = valid.length > 0 ? Math.max(...valid.map((h) => h.wpm!)) : 0;
+    const avgWpm = valid.length > 0 ? Math.round(valid.reduce((s, h) => s + h.wpm!, 0) / valid.length) : 0;
+    const avgAccuracy = valid.length > 0 ? Math.round(valid.reduce((s, h) => s + h.accuracy!, 0) / valid.length) : 0;
+    const totalWords = valid.reduce((s, h) => s + Math.round(h.wpm! * ((h.duration_ms || 0) / 60000)), 0);
+    const totalTimeMinutes = Math.round(valid.reduce((s, h) => s + (h.duration_ms || 0), 0) / 60000);
+
+    const expertHistory = valid.filter((h) => h.passages?.difficulty === "expert");
+    const bestByLang = (lang: string) =>
+      expertHistory
+        .filter((h) => h.passages?.language === lang)
+        .reduce<{ wpm: number; accuracy: number } | null>(
+          (best, h) => (!best || h.wpm! > best.wpm ? { wpm: h.wpm!, accuracy: h.accuracy! } : best),
+          null
+        );
+
+    const recentRuns = history.slice(0, 10).map((h) => ({
+      wpm: h.wpm,
+      accuracy: h.accuracy,
+      difficulty: h.passages?.difficulty || "unknown",
+      language: h.passages?.language || profile.preferred_language || "english",
+      date: h.attempted_at,
+    }));
+
+    return NextResponse.json({
+      profile: {
+        id: profile.id,
+        displayName: profile.display_name || profile.username || "Anonymous",
+        username: profile.username,
+        avatarUrl: profile.avatar_url,
+        preferredLanguage: profile.preferred_language,
+        joinedAt: profile.created_at,
+      },
+      stats: { totalSessions, bestWpm, avgWpm, avgAccuracy, totalWords, totalTimeMinutes },
+      bestScores: {
+        english: bestByLang("english"),
+        lao: bestByLang("lao"),
+      },
+      recentRuns,
     });
-
-    // Sort by WPM for the requested language to determine rank
-    const ranked = Array.from(bestScores.values())
-      .filter((e) => e.passageLanguage === lang)
-      .sort((a, b) => b.wpm - a.wpm)
-      .map((e, i) => ({ ...e, rank: i + 1 }));
-
-    const entry = ranked.find((e) => e.userId === userId);
-    if (!entry) {
-      return NextResponse.json({ error: "User not found on leaderboard" }, { status: 404 });
-    }
-
-    return NextResponse.json({ ...entry, totalPlayers: ranked.length });
-  } catch (error: any) {
+  } catch {
     return NextResponse.json({ error: "Internal server error" }, { status: 500 });
   }
 }

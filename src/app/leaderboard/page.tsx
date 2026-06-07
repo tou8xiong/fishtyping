@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useAuth } from "@/hooks/useAuth";
+import { useRouter } from "next/navigation";
 import { LuShare2, LuCheck } from "react-icons/lu";
 
 interface LeaderboardEntry {
@@ -30,6 +31,7 @@ function getSpeedTier(wpm: number) {
 
 export default function LeaderboardPage() {
   const { user } = useAuth();
+  const router = useRouter();
   const [leaderboard, setLeaderboard] = useState<LeaderboardEntry[]>([]);
   const [loading, setLoading] = useState(true);
   const [activeFilter, setActiveFilter] = useState<string>("All Time");
@@ -159,7 +161,7 @@ export default function LeaderboardPage() {
       <div className="relative mx-auto flex w-full max-w-5xl flex-col gap-10">
 
         {/* ── Header ── */}
-        <div className="flex flex-col gap-6">
+        <div className="animate-slide-up flex flex-col gap-6">
           <div className="flex flex-col gap-2 lg:flex-row lg:items-end lg:justify-between">
             <div>
               <div className="mb-2 flex items-center gap-2">
@@ -237,14 +239,16 @@ export default function LeaderboardPage() {
 
         {/* ── Podium ── */}
         <div className="grid grid-cols-3 items-end gap-3">
-          {podiumOrder.map(({ entry, pos }) => {
+          {podiumOrder.map(({ entry, pos }, i) => {
             const cfg = podiumConfig[pos as 1 | 2 | 3];
             const isEmpty = !entry;
+            const delayClass = i === 0 ? "delay-200" : i === 1 ? "delay-100" : "delay-300";
 
             return (
               <article
                 key={pos}
-                className={`glass relative flex flex-col rounded-2xl border p-5 transition-all duration-300 hover:-translate-y-1 ${cfg.elevate} ${cfg.border} ${cfg.glow}`}
+                onClick={() => entry && router.push(`/rank/${entry.userId}`)}
+                className={`animate-scale-in ${delayClass} glass relative flex flex-col rounded-2xl border p-5 transition-all duration-300 hover:-translate-y-1 ${cfg.elevate} ${cfg.border} ${cfg.glow} ${entry ? "cursor-pointer" : ""}`}
               >
                 <div className="absolute inset-0 rounded-2xl bg-[radial-gradient(circle_at_top_left,rgba(255,255,255,0.04),transparent_55%)]" />
 
@@ -299,7 +303,7 @@ export default function LeaderboardPage() {
 
         {/* ── Table (rank 4+) ── */}
         {restOfLeaderboard.length > 0 && (
-          <div className="glass overflow-hidden rounded-2xl border border-white/8">
+          <div className="animate-slide-up delay-400 glass overflow-hidden rounded-2xl border border-white/8">
             <div className="border-b border-white/5 px-6 py-4">
               <h2 className="text-[10px] font-black uppercase tracking-[0.35em] text-foreground/40">Full Rankings</h2>
             </div>
@@ -319,7 +323,7 @@ export default function LeaderboardPage() {
                     const tier = getSpeedTier(player.wpm);
                     const barWidth = Math.round((player.wpm / maxWpm) * 100);
                     return (
-                      <tr key={player.rank} className="group border-t border-white/4 transition-colors hover:bg-white/3">
+                      <tr key={player.rank} onClick={() => router.push(`/rank/${player.userId}`)} className="group cursor-pointer border-t border-white/4 transition-colors hover:bg-white/3">
                         <td className="px-6 py-4">
                           <span className="text-sm font-black tabular-nums text-foreground/30">
                             {String(player.rank).padStart(2, "0")}
