@@ -18,12 +18,13 @@ import { signOut } from "firebase/auth";
 import { auth } from "@/lib/firebase/config";
 import { signOutAction } from "@/app/login/actions";
 import { toast } from "sonner";
-import { useEffect } from "react";
+import { useEffect, useCallback } from "react";
 
 const sidebarItems = [
   { label: "Appearance", icon: LuPalette, id: "appearance" },
   { label: "Typing Prefs", icon: LuCircleUserRound, id: "typing" },
   { label: "Notifications", icon: LuBell, id: "notifications" },
+  { label: "Account", icon: LuShield, id: "account" },
 ];
 
 export default function SettingsPage() {
@@ -36,6 +37,11 @@ export default function SettingsPage() {
       router.push("/login?redirect=/settings");
     }
   }, [loading, user, router]);
+
+  const scrollToSection = useCallback((id: string) => {
+    const el = document.getElementById(id);
+    if (el) el.scrollIntoView({ behavior: "smooth", block: "start" });
+  }, []);
 
   const handleSignOut = async () => {
     await signOut(auth);
@@ -67,6 +73,11 @@ export default function SettingsPage() {
   const handleDifficultyChange = (difficulty: "beginner" | "advanced" | "expert") => {
     updateSettings({ defaultDifficulty: difficulty });
     toast.success(`Default difficulty set to ${difficulty}`);
+  };
+
+  const handleLengthChange = (defaultLength: "short" | "medium" | "long") => {
+    updateSettings({ defaultLength });
+    toast.success(`Default passage length set to ${defaultLength}`);
   };
 
   const toggleSetting = (key: keyof typeof settings) => {
@@ -101,6 +112,7 @@ export default function SettingsPage() {
               return (
                 <button
                   key={item.label}
+                  onClick={() => scrollToSection(item.id)}
                   className="flex w-full items-center gap-3 rounded-md border border-transparent px-3 py-2.5 text-left text-[11px] font-black uppercase tracking-[0.22em] text-foreground/75 transition-all hover:border-border hover:bg-white/[0.03] hover:text-foreground"
                 >
                   <Icon className="h-4 w-4 shrink-0" />
@@ -127,7 +139,7 @@ export default function SettingsPage() {
           </section>
 
           {/* Appearance Section */}
-          <section className="glass rounded-xl border border-border/80 px-5 py-7 md:px-7">
+          <section id="appearance" className="glass rounded-xl border border-border/80 px-5 py-7 md:px-7">
             <div className="space-y-1">
               <div className="flex items-center gap-3">
                 <LuPalette className="h-5 w-5 text-primary/80" />
@@ -184,7 +196,7 @@ export default function SettingsPage() {
           </section>
 
           {/* Typing Preferences Section */}
-          <section className="glass rounded-xl border border-border/80 px-5 py-7 md:px-7">
+          <section id="typing" className="glass rounded-xl border border-border/80 px-5 py-7 md:px-7">
             <div className="space-y-1">
               <div className="flex items-center gap-3">
                 <LuCircleUserRound className="h-5 w-5 text-primary/80" />
@@ -240,7 +252,29 @@ export default function SettingsPage() {
                 </div>
               </div>
 
-              {/* Font Family - Moved from Appearance */}
+              {/* Default Passage Length */}
+              <div>
+                <label className="block text-[11px] font-black uppercase tracking-[0.24em] text-foreground/55 mb-3">
+                  Default Passage Length
+                </label>
+                <div className="grid grid-cols-3 gap-3">
+                  {(["short", "medium", "long"] as const).map((len) => (
+                    <button
+                      key={len}
+                      onClick={() => handleLengthChange(len)}
+                      className={`rounded-lg border p-4 text-xs font-black uppercase tracking-wider transition-all ${
+                        settings.defaultLength === len
+                          ? "border-primary/60 bg-primary/10 text-foreground shadow-[0_0_20px_rgba(11,175,231,0.18)]"
+                          : "border-border/60 bg-white/[0.02] text-foreground/70 hover:border-primary/40"
+                      }`}
+                    >
+                      {len}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Font Family */}
               <div>
                 <label className="block text-[11px] font-black uppercase tracking-[0.24em] text-foreground/55 mb-3">
                   Typing Font Family
@@ -282,7 +316,7 @@ export default function SettingsPage() {
                 </div>
               </div>
 
-              {/* Font Size - Moved from Appearance */}
+              {/* Font Size */}
               <div>
                 <label className="block text-[11px] font-black uppercase tracking-[0.24em] text-foreground/55 mb-3">
                   Typing Font Size
@@ -335,7 +369,7 @@ export default function SettingsPage() {
           </section>
 
           {/* Notifications Section */}
-          <section className="glass rounded-xl border border-border/80 px-5 py-7 md:px-7">
+          <section id="notifications" className="glass rounded-xl border border-border/80 px-5 py-7 md:px-7">
             <div className="space-y-1">
               <div className="flex items-center gap-3">
                 <LuBell className="h-5 w-5 text-primary/80" />
@@ -348,11 +382,14 @@ export default function SettingsPage() {
 
             <div className="mt-5 space-y-3">
               {[
-                { key: "achievementAlerts" as const, label: "Achievement Alerts" },
-                { key: "personalBestAlerts" as const, label: "Personal Best Alerts" },
+                { key: "achievementAlerts" as const, label: "Achievement Alerts", description: "Notify on new achievements" },
+                { key: "personalBestAlerts" as const, label: "Personal Best Alerts", description: "Notify when you beat your record" },
               ].map((setting) => (
                 <div key={setting.key} className="flex items-center justify-between rounded-lg border border-border/60 bg-white/[0.02] p-4">
-                  <span className="text-sm font-medium text-foreground/80">{setting.label}</span>
+                  <div>
+                    <span className="text-sm font-medium text-foreground/80">{setting.label}</span>
+                    <p className="text-xs text-foreground/50 mt-0.5">{setting.description}</p>
+                  </div>
                   <button
                     onClick={() => toggleSetting(setting.key)}
                     className={`relative h-6 w-11 rounded-full transition-colors ${
@@ -370,8 +407,8 @@ export default function SettingsPage() {
             </div>
           </section>
 
-          {/* Sign Out Section */}
-          <section className="glass rounded-xl border border-border/80 px-5 py-7 md:px-7">
+          {/* Account Section */}
+          <section id="account" className="glass rounded-xl border border-border/80 px-5 py-7 md:px-7">
             <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
               <div>
                 <h2 className="text-2xl font-black tracking-tight text-foreground/75">Account Session</h2>

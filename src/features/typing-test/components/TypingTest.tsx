@@ -19,6 +19,7 @@ export const TypingTest = () => {
   const { user } = useAuth();
   const [difficulty, setDifficulty] = useState<Difficulty>(settings.defaultDifficulty);
   const [language, setLanguage] = useState<Language>(settings.defaultLanguage);
+  const [passageLength, setPassageLength] = useState<'short' | 'medium' | 'long'>(settings.defaultLength);
   const [isMounted, setIsMounted] = useState(false);
   const [isGenerating, setIsGenerating] = useState(false);
   const [currentPassageId, setCurrentPassageId] = useState<string | null>(null);
@@ -130,11 +131,12 @@ export const TypingTest = () => {
     };
   }, [isFinished, isMounted, sampleText]);
 
-  // Update difficulty and language when settings change
+  // Update difficulty, language, and length when settings change
   useEffect(() => {
     setDifficulty(settings.defaultDifficulty);
     setLanguage(settings.defaultLanguage);
-  }, [settings.defaultDifficulty, settings.defaultLanguage]);
+    setPassageLength(settings.defaultLength);
+  }, [settings.defaultDifficulty, settings.defaultLanguage, settings.defaultLength]);
 
   // Check beginner phase on mount
   useEffect(() => {
@@ -208,7 +210,7 @@ export const TypingTest = () => {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           difficulty,
-          length: 'medium',
+          length: passageLength,
           language,
           excludePassageId: currentPassageId,
         }),
@@ -232,7 +234,7 @@ export const TypingTest = () => {
     }
     setIsGenerating(false);
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [difficulty, language, beginnerPhase]);
+  }, [difficulty, language, passageLength, beginnerPhase]);
 
   const handleReset = useCallback(async () => {
     reset();
@@ -269,7 +271,7 @@ export const TypingTest = () => {
     reset();
     loadNewPassage();
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isMounted, difficulty, language, beginnerPhase]);
+  }, [isMounted, difficulty, language, passageLength, beginnerPhase]);
 
   useEffect(() => {
     setIsMounted(true);

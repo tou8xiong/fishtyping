@@ -12,6 +12,7 @@ interface Settings {
   fontSize: FontSize;
   defaultLanguage: "english" | "lao";
   defaultDifficulty: "beginner" | "advanced" | "expert";
+  defaultLength: "short" | "medium" | "long";
   soundEffects: boolean;
   showLiveWpm: boolean;
   smoothCaret: boolean;
@@ -30,6 +31,7 @@ const defaultSettings: Settings = {
   fontSize: "medium",
   defaultLanguage: "english",
   defaultDifficulty: "expert",
+  defaultLength: "medium",
   soundEffects: false,
   showLiveWpm: true,
   smoothCaret: true,
