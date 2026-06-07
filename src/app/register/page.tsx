@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useState } from "react";
 import { LuLock, LuMail, LuUserRound, LuUserRoundPlus } from "react-icons/lu";
+import { FaGithub } from "react-icons/fa";
 import { auth } from "@/lib/firebase/config";
 import { createUserWithEmailAndPassword, signInWithPopup, GoogleAuthProvider, GithubAuthProvider, updateProfile } from "firebase/auth";
 import { createUserProfile } from "../login/actions";
@@ -85,8 +86,17 @@ export default function RegisterPage() {
       toast.success("Account created successfully");
       router.push("/");
     } catch (err: any) {
-      setError(err.message || "Failed to sign up with OAuth");
-      toast.error(err.message || "Failed to sign up with OAuth");
+      const code = err?.code || "";
+      let msg = err.message || "Failed to sign up";
+      if (code === "auth/operation-not-allowed") {
+        msg = "GitHub sign-in is not enabled yet. Please enable it in Firebase Console → Authentication → Sign-in method.";
+      } else if (code === "auth/popup-closed-by-user") {
+        msg = "Sign-in popup was closed. Please try again.";
+      } else if (code === "auth/account-exists-with-different-credential") {
+        msg = "An account already exists with the same email. Try signing in with a different method.";
+      }
+      setError(msg);
+      toast.error(msg);
       setLoading(false);
     }
   };
@@ -198,9 +208,10 @@ export default function RegisterPage() {
               <input name="terms" type="checkbox" required className="mt-0.5 h-3.5 w-3.5 accent-[var(--primary)]" />
               <span>
                 I agree to the{" "}
-                <a href="#" className="font-bold text-primary hover:text-primary/80">
-                  Terms & Privacy Policy.
-                </a>
+                <Link href="/terms" target="_blank" className="font-bold text-primary hover:text-primary/80 transition-colors">
+                  Terms &amp; Privacy Policy
+                </Link>
+                .
               </span>
             </label>
 
@@ -226,9 +237,9 @@ export default function RegisterPage() {
             <button
               onClick={() => handleOAuth("github")}
               disabled={loading}
-              className="flex w-full items-center justify-center gap-2 rounded-sm border border-border bg-transparent px-4 py-3 text-sm text-foreground/80 transition-colors hover:border-primary/35 hover:text-foreground disabled:opacity-50"
+              className="flex w-full items-center justify-center gap-2 rounded-sm border border-white/15 bg-[#24292e] px-4 py-3 text-sm font-semibold text-white transition-all hover:bg-[#2f3640] disabled:opacity-50"
             >
-              <LuUserRound className="h-4 w-4" />
+              <FaGithub className="h-4 w-4" />
               Sign up with GitHub
             </button>
           </div>

@@ -75,9 +75,14 @@ export function Footer() {
           <p className="text-xs text-foreground/30 font-medium">
             &copy; {new Date().getFullYear()} FishTyping. All rights reserved.
           </p>
-          <p className="text-xs text-foreground/20 font-medium tracking-widest uppercase">
-            Precision matters.
-          </p>
+          <div className="flex items-center gap-4">
+            <Link href="/terms" className="text-xs text-foreground/25 hover:text-primary/60 transition-colors">
+              Terms &amp; Privacy
+            </Link>
+            <p className="text-xs text-foreground/20 font-medium tracking-widest uppercase">
+              Precision matters.
+            </p>
+          </div>
         </div>
       </div>
     </footer>

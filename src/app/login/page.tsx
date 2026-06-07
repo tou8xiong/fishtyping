@@ -3,7 +3,8 @@
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { Suspense, useMemo, useState } from "react";
-import { LuArrowRight, LuCircleUserRound, LuCodeXml } from "react-icons/lu";
+import { LuArrowRight, LuCircleUserRound } from "react-icons/lu";
+import { FaGithub } from "react-icons/fa";
 import { auth } from "@/lib/firebase/config";
 import { signInWithEmailAndPassword, signInWithPopup, GoogleAuthProvider, GithubAuthProvider } from "firebase/auth";
 import { createUserProfile } from "./actions";
@@ -74,8 +75,17 @@ function LoginPageInner() {
       toast.success("Signed in successfully");
       router.push("/");
     } catch (err: any) {
-      setError(err.message || "Failed to sign in with OAuth");
-      toast.error(err.message || "Failed to sign in with OAuth");
+      const code = err?.code || "";
+      let msg = err.message || "Failed to sign in";
+      if (code === "auth/operation-not-allowed") {
+        msg = "GitHub sign-in is not enabled yet. Please enable it in Firebase Console → Authentication → Sign-in method.";
+      } else if (code === "auth/popup-closed-by-user") {
+        msg = "Sign-in popup was closed. Please try again.";
+      } else if (code === "auth/account-exists-with-different-credential") {
+        msg = "An account already exists with the same email. Try signing in with a different method.";
+      }
+      setError(msg);
+      toast.error(msg);
       setLoading(false);
     }
   };
@@ -161,9 +171,9 @@ function LoginPageInner() {
             <button
               onClick={() => handleOAuth("github")}
               disabled={loading}
-              className="flex w-full items-center justify-center gap-2 rounded-sm border border-border bg-transparent px-4 py-3 text-sm text-foreground/80 transition-colors hover:border-primary/35 hover:text-foreground disabled:opacity-50"
+              className="flex w-full items-center justify-center gap-2 rounded-sm border border-white/15 bg-[#24292e] px-4 py-3 text-sm font-semibold text-white transition-all hover:bg-[#2f3640] disabled:opacity-50"
             >
-              <LuCodeXml className="h-4 w-4" />
+              <FaGithub className="h-4 w-4" />
               Continue with GitHub
             </button>
           </div>
@@ -173,6 +183,14 @@ function LoginPageInner() {
             <Link href="/register" className="text-primary transition-colors hover:text-primary/80">
               Sign Up
             </Link>
+          </p>
+
+          <p className="mt-4 text-center text-[10px] text-foreground/30">
+            By signing in you agree to our{" "}
+            <Link href="/terms" target="_blank" className="text-foreground/50 underline underline-offset-2 transition-colors hover:text-primary/70">
+              Terms &amp; Privacy Policy
+            </Link>
+            .
           </p>
         </div>
       </div>
