@@ -23,6 +23,7 @@ export async function getAvailablePassage(params: {
     .from('passages')
     .select('*')
     .eq('status', 'ready')
+    .eq('enabled', true)
     .eq('difficulty', difficulty)
     .eq('length', length)
     .eq('language', language)
@@ -144,7 +145,8 @@ export async function checkPoolThresholds(): Promise<{ difficulty: Difficulty; l
   const { data, error } = await supabase
     .from('passages')
     .select('difficulty, length')
-    .eq('status', 'ready');
+    .eq('status', 'ready')
+    .eq('enabled', true);
 
   if (error || !data) return [];
 

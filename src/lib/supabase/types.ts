@@ -30,6 +30,7 @@ export interface Passage {
   difficulty: Difficulty;
   length: Length;
   status: PassageStatus;
+  enabled: boolean;
   generated_by: GeneratedBy;
   ai_model: string | null;
   ai_prompt_id: string | null;

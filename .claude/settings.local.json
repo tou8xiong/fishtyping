@@ -5,8 +5,27 @@
       "Bash(npx supabase *)",
       "Bash(npx tsc *)",
       "Bash(npm install *)",
+      "Bash(npm run build)",
+      "Bash(npm run dev)",
+      "Bash(npm run lint)",
+      "Bash(npm run *)",
+      "Bash(git add *)",
+      "Bash(git commit *)",
+      "Bash(git push)",
+      "Bash(git push *)",
+      "Bash(git status)",
+      "Bash(git diff *)",
+      "Bash(git log *)",
       "Bash(curl -X POST http://localhost:3000/api/generate-passage -H \"Content-Type: application/json\" -d '{\"difficulty\":\"expert\",\"length\":\"medium\",\"language\":\"lao\"}')",
-      "Bash(node:*)"
+      "Bash(node:*)",
+      "Bash(taskkill *)",
+      "Bash(Get-ChildItem -Path \"E:\\\\comet-aplication\\\\fishtyping\" -Force)",
+      "Bash(Select-Object Name, PSIsContainer)",
+      "Bash(Format-Table -AutoSize)",
+      "Bash(Select-Object Name, Mode)",
+      "PowerShell(Get-ChildItem -Path \"E:\\\\comet-aplication\\\\fishtyping\" -Force | Select-Object Name, @{Name=\"Type\"; Expression={if\\($_.PSIsContainer\\) {\"Dir\"} else {\"File\"}}} | Format-Table -AutoSize)",
+      "PowerShell(head *)",
+      "PowerShell(Get-ChildItem -Path \"E:\\\\comet-aplication\\\\fishtyping\\\\src\" -Recurse -Force | Select-Object FullName, @{Name=\"Type\"; Expression={if\\($_.PSIsContainer\\) {\"Dir\"} else {\"File\"}}} | Select-Object -First 100)"
     ]
   }
 }

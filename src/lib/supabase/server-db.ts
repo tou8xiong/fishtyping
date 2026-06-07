@@ -17,6 +17,7 @@ export async function fetchPassage(params: {
       .from('passages')
       .select('*')
       .eq('status', 'ready')
+      .eq('enabled', true)
       .eq('difficulty', difficulty)
       .eq('language', language)
       .order('used_count', { ascending: true })
