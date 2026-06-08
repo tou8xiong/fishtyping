@@ -7,6 +7,7 @@ import AdminLayout from "@/components/AdminLayout";
 import AdminBreadcrumb from "@/components/AdminBreadcrumb";
 import TablePagination from "@/components/TablePagination";
 import { MdEmojiEvents, MdPerson, MdSpeed, MdCheckCircle } from "react-icons/md";
+import { getAuthHeaders } from "@/lib/auth/getAuthHeaders";
 
 const ADMIN_EMAIL = "touxhk@gmail.com";
 const ADMIN_ID = "8OZdxsSF8gY5ysBogP5yqkTMaZI3";
@@ -67,13 +68,10 @@ export default function AdminRankingPage() {
   const fetchRankingData = async () => {
     try {
       setIsLoading(true);
+      const authHeaders = await getAuthHeaders();
       const response = await fetch(
         `/api/admin/ranking?difficulty=${difficultyFilter}&limit=1000`,
-        {
-          headers: {
-            Authorization: `Bearer ${user?.id}`,
-          },
-        }
+        { headers: authHeaders }
       );
 
       if (!response.ok) throw new Error("Failed to fetch ranking data");

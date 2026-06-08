@@ -8,6 +8,7 @@ import AdminBreadcrumb from "@/components/AdminBreadcrumb";
 import TablePagination from "@/components/TablePagination";
 import type { User } from "@/lib/supabase/types";
 import { MdAdd, MdClose, MdEdit, MdDelete } from "react-icons/md";
+import { getAuthHeaders } from "@/lib/auth/getAuthHeaders";
 
 const ADMIN_EMAIL = "touxhk@gmail.com";
 const ADMIN_ID = "8OZdxsSF8gY5ysBogP5yqkTMaZI3";
@@ -59,10 +60,9 @@ export default function AdminUsersPage() {
   const fetchUsers = async () => {
     try {
       setIsLoading(true);
+      const authHeaders = await getAuthHeaders();
       const response = await fetch("/api/admin/users", {
-        headers: {
-          Authorization: `Bearer ${user?.id}`,
-        },
+        headers: authHeaders,
       });
 
       if (!response.ok) throw new Error("Failed to fetch users");
@@ -134,12 +134,10 @@ export default function AdminUsersPage() {
 
     try {
       const method = editingUser ? "PUT" : "POST";
+      const authHeaders = await getAuthHeaders();
       const response = await fetch("/api/admin/users", {
         method,
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${user?.id}`,
-        },
+        headers: { "Content-Type": "application/json", ...authHeaders },
         body: JSON.stringify(formData),
       });
 
@@ -166,11 +164,10 @@ export default function AdminUsersPage() {
     if (!userToDelete) return;
 
     try {
+      const authHeaders = await getAuthHeaders();
       const response = await fetch(`/api/admin/users?id=${userToDelete}`, {
         method: "DELETE",
-        headers: {
-          Authorization: `Bearer ${user?.id}`,
-        },
+        headers: authHeaders,
       });
 
       if (!response.ok) throw new Error("Failed to delete user");
